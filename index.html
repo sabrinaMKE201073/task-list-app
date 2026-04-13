@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Task List</title>
+  <!-- Link to our CSS file for styling -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <div class="container">
+
+    <!-- App Header -->
+    <h1 class="app-title">📝 My Task List</h1>
+
+    <!-- Input area: type a task, pick a category & priority, click Add -->
+    <div class="input-area">
+      <input type="text" id="task-input" placeholder="Add a new task..." />
+      <button id="add-btn">Add</button>
+    </div>
+
+    <!-- Row 2: Category and Priority dropdowns -->
+    <div class="options-row">
+
+      <!-- Category dropdown -->
+      <div class="option-group">
+        <label for="category-select">Category</label>
+        <select id="category-select">
+          <option value="Work">💼 Work</option>
+          <option value="Learning">📚 Learning</option>
+          <option value="Personal">🏠 Personal</option>
+          <option value="Hobby">🎨 Hobby</option>
+        </select>
+      </div>
+
+      <!-- Priority dropdown -->
+      <div class="option-group">
+        <label for="priority-select">Priority</label>
+        <select id="priority-select">
+          <option value="High">🔴 High</option>
+          <option value="Medium" selected>🟡 Medium</option>
+          <option value="Low">🟢 Low</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- Filter buttons: show tasks by category -->
+    <div class="filter-bar">
+      <span class="filter-label">Filter:</span>
+      <button class="filter-btn active" data-filter="All">All</button>
+      <button class="filter-btn" data-filter="Work">💼 Work</button>
+      <button class="filter-btn" data-filter="Learning">📚 Learning</button>
+      <button class="filter-btn" data-filter="Personal">🏠 Personal</button>
+      <button class="filter-btn" data-filter="Hobby">🎨 Hobby</button>
+    </div>
+
+    <!-- Counter showing how many tasks are left -->
+    <p class="task-counter" id="task-counter">No tasks yet. Add one above!</p>
+
+    <!-- The list where tasks will appear -->
+    <ul id="task-list"></ul>
+
+  </div>
+
+  <!-- Link to our JavaScript file for logic -->
+  <script src="script.js"></script>
+</body>
+
+</html>
