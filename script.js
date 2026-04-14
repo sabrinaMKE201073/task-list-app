@@ -1,21 +1,21 @@
 // ========================================
 // Get references to the HTML elements
 // ========================================
-const taskInput      = document.getElementById('task-input');       // The text input
-const addBtn         = document.getElementById('add-btn');           // The "Add" button
+const taskInput = document.getElementById('task-input');       // The text input
+const addBtn = document.getElementById('add-btn');           // The "Add" button
 const categorySelect = document.getElementById('category-select');   // Category dropdown
 const prioritySelect = document.getElementById('priority-select');   // Priority dropdown
-const statusSelect   = document.getElementById('status-select');     // Status dropdown (NEW)
-const dateInput      = document.getElementById('date-input');        // The date picker
-const taskList       = document.getElementById('task-list');         // The <ul> list
-const taskCounter    = document.getElementById('task-counter');      // The counter text
+const statusSelect = document.getElementById('status-select');     // Status dropdown
+const dateInput = document.getElementById('date-input');        // The date picker
+const taskList = document.getElementById('task-list');         // The <ul> list
+const taskCounter = document.getElementById('task-counter');      // The counter text
 
 // All filter buttons (both category and status filter bars)
 const filterBtns = document.querySelectorAll('.filter-btn');
 
 // Keep track of the two active filters separately
 let currentCategoryFilter = 'All';  // Category filter (All, Work, Learning, etc.)
-let currentStatusFilter   = 'All';  // Status filter (All, WIP, Ongoing, Hold, Done)
+let currentStatusFilter = 'All';  // Status filter (All, WIP, Ongoing, Hold, Done)
 
 
 // ========================================
@@ -40,11 +40,11 @@ function saveTasksToStorage() {
 
   allTasks.forEach(function (li) {
     tasksData.push({
-      text:      li.dataset.text,
-      category:  li.dataset.category,
-      priority:  li.dataset.priority,
-      status:    li.dataset.status,       // Save status (NEW)
-      date:      li.dataset.date,
+      text: li.dataset.text,
+      category: li.dataset.category,
+      priority: li.dataset.priority,
+      status: li.dataset.status,       // Save current status
+      date: li.dataset.date,
       completed: li.classList.contains('completed')
     });
   });
@@ -69,7 +69,7 @@ window.addEventListener('load', function () {
       taskData.text,
       taskData.category,
       taskData.priority,
-      taskData.status || 'WIP',   // (NEW) fallback for old saved data
+      taskData.status || 'WIP',   // Fallback for old saved data
       taskData.date,
       taskData.completed          // Pass the saved completed state
     );
@@ -109,8 +109,8 @@ function addTask() {
   // Read the selected category, priority, status, and date
   const category = categorySelect.value;
   const priority = prioritySelect.value;
-  const status   = statusSelect.value;   // (NEW) Read selected status
-  const date     = dateInput.value;      // e.g. "2026-04-20" or ""
+  const status = statusSelect.value;    // Read selected status
+  const date = dateInput.value;         // e.g. "2026-04-20" or ""
 
   // If the status is "Done", mark the task as completed from the start
   const isCompleted = (status === 'Done');
@@ -135,6 +135,51 @@ function addTask() {
 
 
 // ========================================
+// Update Status Label — Helper Function
+// ========================================
+//
+// This is the KEY function for checkbox ↔ status sync.
+// It updates everything in one place:
+//   1. dataset.status (the data attribute)
+//   2. The status dropdown value and color
+//   3. The checkbox (checked/unchecked) and completed class
+//   4. Saves to localStorage
+//
+// Call this whenever the checkbox OR the status dropdown changes.
+//
+function updateStatusLabel(li, newStatus) {
+  // 1. Update the data attribute on the <li>
+  li.dataset.status = newStatus;
+
+  // 2. Update the inline status dropdown value and color
+  const dropdown = li.querySelector('.task-status-select');
+  if (dropdown) {
+    dropdown.value = newStatus;
+    // Reset the class to apply the correct color
+    dropdown.className = 'task-status-select status-' + newStatus.toLowerCase();
+  }
+
+  // 3. Sync the checkbox and completed class
+  const checkBtn = li.querySelector('.check-btn');
+
+  if (newStatus === 'Done') {
+    // Status is Done → check the checkbox and mark completed
+    li.classList.add('completed');
+    if (checkBtn) checkBtn.textContent = '✓';
+  } else {
+    // Status is NOT Done → uncheck the checkbox and remove completed
+    li.classList.remove('completed');
+    if (checkBtn) checkBtn.textContent = '';
+  }
+
+  // 4. Save to localStorage and update UI
+  saveTasksToStorage();
+  updateCounter();
+  applyFilter();
+}
+
+
+// ========================================
 // Create a Task Element
 // ========================================
 
@@ -143,20 +188,30 @@ function addTask() {
 //   text      — the task description
 //   category  — e.g. "Work", "Personal"
 //   priority  — e.g. "High", "Medium", "Low"
-//   status    — e.g. "WIP", "Ongoing", "Hold", "Done" (NEW)
+//   status    — e.g. "WIP", "Ongoing", "Hold", "Done"
 //   date      — a date string like "2026-04-20", or an empty string if none
 //   completed — boolean, true if the task was already marked done
 function createTaskItem(text, category, priority, status, date, completed) {
+
+  // Ensure status and completed are in sync for consistency
+  // (Handles edge cases from older saved data)
+  if (completed && status !== 'Done') {
+    status = 'Done';
+  }
+  if (status === 'Done') {
+    completed = true;
+  }
+
   // Create the list item (<li>)
   const li = document.createElement('li');
   li.classList.add('task-item');
 
   // Store task data as data attributes (used for filtering and saving)
-  li.dataset.text     = text;
+  li.dataset.text = text;
   li.dataset.category = category;
   li.dataset.priority = priority;
-  li.dataset.status   = status;    // Store status (NEW)
-  li.dataset.date     = date;
+  li.dataset.status = status;     // Store status
+  li.dataset.date = date;
 
   // Add a priority class for colour highlighting
   li.classList.add('priority-' + priority.toLowerCase());
@@ -176,20 +231,16 @@ function createTaskItem(text, category, priority, status, date, completed) {
     checkBtn.textContent = '✓';
   }
 
-  // When clicked, toggle the "completed" style and save
+  // CHECKBOX → STATUS SYNC
+  // When clicked, toggle completed and sync the status accordingly
   checkBtn.addEventListener('click', function () {
-    li.classList.toggle('completed');
-
-    // Show a tick icon when completed, empty when not
     if (li.classList.contains('completed')) {
-      checkBtn.textContent = '✓';
+      // Currently completed → unchecking → revert status to "WIP"
+      updateStatusLabel(li, 'WIP');
     } else {
-      checkBtn.textContent = '';
+      // Currently not completed → checking → set status to "Done"
+      updateStatusLabel(li, 'Done');
     }
-
-    // Persist the updated completed state
-    saveTasksToStorage();
-    updateCounter();
   });
 
   // --- Task Content (text + badges + date) ---
@@ -201,7 +252,7 @@ function createTaskItem(text, category, priority, status, date, completed) {
   span.classList.add('task-text');
   span.textContent = text;
 
-  // Badges row (category + priority + status)
+  // Badges row (category + priority + status dropdown)
   const metaDiv = document.createElement('div');
   metaDiv.classList.add('task-meta');
 
@@ -215,15 +266,40 @@ function createTaskItem(text, category, priority, status, date, completed) {
   priorityBadge.classList.add('badge', 'badge-' + priority.toLowerCase());
   priorityBadge.textContent = priority;
 
-  // Status badge (NEW)
-  // Shows a coloured badge to make the status visually clear
-  const statusBadge = document.createElement('span');
-  statusBadge.classList.add('badge', 'badge-' + status.toLowerCase());
-  statusBadge.textContent = getStatusLabel(status);  // e.g. "🔶 WIP"
+  // --- Inline Status Dropdown (replaces static badge) ---
+  // This allows the user to change the status directly on the task
+  const statusDropdown = document.createElement('select');
+  statusDropdown.classList.add('task-status-select', 'status-' + status.toLowerCase());
 
+  // Add the four status options
+  const statusOptions = [
+    { value: 'WIP', label: '🔶 WIP' },
+    { value: 'Ongoing', label: '🔵 Ongoing' },
+    { value: 'Hold', label: '⏸ Hold' },
+    { value: 'Done', label: '✅ Done' }
+  ];
+
+  statusOptions.forEach(function (opt) {
+    const option = document.createElement('option');
+    option.value = opt.value;
+    option.textContent = opt.label;
+    // Pre-select the current status
+    if (opt.value === status) {
+      option.selected = true;
+    }
+    statusDropdown.appendChild(option);
+  });
+
+  // STATUS DROPDOWN → CHECKBOX SYNC (reverse sync)
+  // When the user changes the status dropdown, update checkbox accordingly
+  statusDropdown.addEventListener('change', function () {
+    updateStatusLabel(li, statusDropdown.value);
+  });
+
+  // Assemble the badges row
   metaDiv.appendChild(categoryBadge);
   metaDiv.appendChild(priorityBadge);
-  metaDiv.appendChild(statusBadge);   // Add status badge (NEW)
+  metaDiv.appendChild(statusDropdown);   // Interactive dropdown instead of static badge
 
   // Date display (only shown if a date was chosen)
   if (date) {
@@ -262,17 +338,18 @@ function createTaskItem(text, category, priority, status, date, completed) {
 
 
 // ========================================
-// Status Label Helper (NEW)
+// Status Label Helper
 // ========================================
 
 // Returns a friendly display label for each status value
+// (Used if you ever need the emoji + text label for a status)
 function getStatusLabel(status) {
   switch (status) {
-    case 'WIP':     return '🔶 WIP';
+    case 'WIP': return '🔶 WIP';
     case 'Ongoing': return '🔵 Ongoing';
-    case 'Hold':    return '⏸ Hold';
-    case 'Done':    return '✅ Done';
-    default:        return status;
+    case 'Hold': return '⏸ Hold';
+    case 'Done': return '✅ Done';
+    default: return status;
   }
 }
 
@@ -287,12 +364,12 @@ function formatDate(dateStr) {
 
   // Split the date string into parts
   const parts = dateStr.split('-');   // ["2026", "04", "20"]
-  const year  = parts[0];
+  const year = parts[0];
   const month = parseInt(parts[1], 10) - 1;  // JS months are 0-indexed
-  const day   = parseInt(parts[2], 10);
+  const day = parseInt(parts[2], 10);
 
-  const months = ['Jan','Feb','Mar','Apr','May','Jun',
-                  'Jul','Aug','Sep','Oct','Nov','Dec'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return day + ' ' + months[month] + ' ' + year;
 }
