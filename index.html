@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Task List</title>
   <meta name="description"
-    content="A simple, beginner-friendly task list app with categories, priorities, and dates." />
+    content="A simple, beginner-friendly task list app with categories, priorities, dates, and task status." />
   <!-- Link to our CSS file for styling -->
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -24,7 +24,7 @@
       <button id="add-btn">Add</button>
     </div>
 
-    <!-- Row 2: Category, Priority, and Date inputs -->
+    <!-- Row 2: Category, Priority, Date, and Status inputs -->
     <div class="options-row">
 
       <!-- Category dropdown -->
@@ -48,6 +48,17 @@
         </select>
       </div>
 
+      <!-- Status dropdown (NEW) -->
+      <div class="option-group">
+        <label for="status-select">Status</label>
+        <select id="status-select">
+          <option value="WIP">🔶 WIP</option>
+          <option value="Ongoing">🔵 Ongoing</option>
+          <option value="Hold">⏸ Hold</option>
+          <option value="Done">✅ Done</option>
+        </select>
+      </div>
+
       <!-- Date picker -->
       <div class="option-group">
         <label for="date-input">Due Date</label>
@@ -56,14 +67,24 @@
 
     </div>
 
-    <!-- Filter buttons: show tasks by category -->
-    <div class="filter-bar">
-      <span class="filter-label">Filter:</span>
-      <button class="filter-btn active" data-filter="All">All</button>
-      <button class="filter-btn" data-filter="Work">💼 Work</button>
-      <button class="filter-btn" data-filter="Learning">📚 Learning</button>
-      <button class="filter-btn" data-filter="Personal">🏠 Personal</button>
-      <button class="filter-btn" data-filter="Hobby">🎨 Hobby</button>
+    <!-- Filter Row 1: Filter by Category -->
+    <div class="filter-section-label">Filter by Category:</div>
+    <div class="filter-bar" id="category-filter-bar">
+      <button class="filter-btn active" data-filter-type="category" data-filter="All">All</button>
+      <button class="filter-btn" data-filter-type="category" data-filter="Work">💼 Work</button>
+      <button class="filter-btn" data-filter-type="category" data-filter="Learning">📚 Learning</button>
+      <button class="filter-btn" data-filter-type="category" data-filter="Personal">🏠 Personal</button>
+      <button class="filter-btn" data-filter-type="category" data-filter="Hobby">🎨 Hobby</button>
+    </div>
+
+    <!-- Filter Row 2: Filter by Status (NEW) -->
+    <div class="filter-section-label">Filter by Status:</div>
+    <div class="filter-bar" id="status-filter-bar">
+      <button class="filter-btn active" data-filter-type="status" data-filter="All">All</button>
+      <button class="filter-btn status-filter-wip" data-filter-type="status" data-filter="WIP">🔶 WIP</button>
+      <button class="filter-btn status-filter-ongoing" data-filter-type="status" data-filter="Ongoing">🔵 Ongoing</button>
+      <button class="filter-btn status-filter-hold" data-filter-type="status" data-filter="Hold">⏸ Hold</button>
+      <button class="filter-btn status-filter-done" data-filter-type="status" data-filter="Done">✅ Done</button>
     </div>
 
     <!-- Counter showing how many tasks are left -->
