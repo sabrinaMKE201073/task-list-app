@@ -1,16 +1,78 @@
 // ========================================
 // Get references to the HTML elements
 // ========================================
-const taskInput = document.getElementById('task-input');         // The text input
-const addBtn = document.getElementById('add-btn');               // The "Add" button
-const categorySelect = document.getElementById('category-select'); // Category dropdown
-const prioritySelect = document.getElementById('priority-select'); // Priority dropdown
-const taskList = document.getElementById('task-list');           // The <ul> list
-const taskCounter = document.getElementById('task-counter');     // The counter text
-const filterBtns = document.querySelectorAll('.filter-btn');     // All filter buttons
+const taskInput      = document.getElementById('task-input');       // The text input
+const addBtn         = document.getElementById('add-btn');           // The "Add" button
+const categorySelect = document.getElementById('category-select');   // Category dropdown
+const prioritySelect = document.getElementById('priority-select');   // Priority dropdown
+const dateInput      = document.getElementById('date-input');        // The date picker
+const taskList       = document.getElementById('task-list');         // The <ul> list
+const taskCounter    = document.getElementById('task-counter');      // The counter text
+const filterBtns     = document.querySelectorAll('.filter-btn');     // All filter buttons
 
 // Keep track of the currently active filter
 let currentFilter = 'All';
+
+
+// ========================================
+// localStorage Helpers
+// ========================================
+
+// Key used to store tasks in localStorage
+const STORAGE_KEY = 'myTaskListData';
+
+// Load all saved tasks from localStorage (returns an array of task objects)
+function loadTasksFromStorage() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  // If nothing saved yet, return an empty array
+  return saved ? JSON.parse(saved) : [];
+}
+
+// Save all current tasks to localStorage
+function saveTasksToStorage() {
+  // Collect every task item in the list and build a data object for each
+  const allTasks = taskList.querySelectorAll('.task-item');
+  const tasksData = [];
+
+  allTasks.forEach(function (li) {
+    tasksData.push({
+      text:      li.dataset.text,
+      category:  li.dataset.category,
+      priority:  li.dataset.priority,
+      date:      li.dataset.date,
+      completed: li.classList.contains('completed')
+    });
+  });
+
+  // Store as a JSON string
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasksData));
+}
+
+
+// ========================================
+// On Page Load — Restore Saved Tasks
+// ========================================
+
+// When the page first loads, pull tasks from localStorage and display them
+window.addEventListener('load', function () {
+  const savedTasks = loadTasksFromStorage();
+
+  savedTasks.forEach(function (taskData) {
+    // Recreate each task element from stored data
+    const taskItem = createTaskItem(
+      taskData.text,
+      taskData.category,
+      taskData.priority,
+      taskData.date,
+      taskData.completed   // pass the saved completed state
+    );
+    taskList.appendChild(taskItem);
+  });
+
+  // Apply the current filter and update the counter after restoring
+  applyFilter();
+  updateCounter();
+});
 
 
 // ========================================
@@ -37,13 +99,17 @@ function addTask() {
     return;
   }
 
-  // Read the selected category and priority
+  // Read the selected category, priority, and date
   const category = categorySelect.value;
   const priority = prioritySelect.value;
+  const date     = dateInput.value;       // e.g. "2026-04-20" or ""
 
   // Create the task element and add it to the list
-  const taskItem = createTaskItem(taskText, category, priority);
+  const taskItem = createTaskItem(taskText, category, priority, date, false);
   taskList.appendChild(taskItem);
+
+  // Save to localStorage so the task persists after refresh
+  saveTasksToStorage();
 
   // Clear the input box and focus it, ready for the next task
   taskInput.value = '';
@@ -61,24 +127,43 @@ function addTask() {
 // Create a Task Element
 // ========================================
 
-function createTaskItem(text, category, priority) {
+// Builds and returns an <li> element for a single task.
+// Parameters:
+//   text      — the task description
+//   category  — e.g. "Work", "Personal"
+//   priority  — e.g. "High", "Medium", "Low"
+//   date      — a date string like "2026-04-20", or an empty string if none
+//   completed — boolean, true if the task was already marked done
+function createTaskItem(text, category, priority, date, completed) {
   // Create the list item (<li>)
   const li = document.createElement('li');
   li.classList.add('task-item');
 
-  // Store category and priority as data attributes for filtering
+  // Store task data as data attributes (used for filtering and saving)
+  li.dataset.text     = text;
   li.dataset.category = category;
   li.dataset.priority = priority;
+  li.dataset.date     = date;
 
-  // Add a priority class for visual highlighting
+  // Add a priority class for colour highlighting
   li.classList.add('priority-' + priority.toLowerCase());
+
+  // Restore completed state if this task was already done
+  if (completed) {
+    li.classList.add('completed');
+  }
 
   // --- Checkbox / Complete button ---
   const checkBtn = document.createElement('button');
   checkBtn.classList.add('check-btn');
   checkBtn.title = 'Mark as complete';
 
-  // When clicked, toggle the "completed" style
+  // Show a tick if the task was already completed when restored
+  if (completed) {
+    checkBtn.textContent = '✓';
+  }
+
+  // When clicked, toggle the "completed" style and save
   checkBtn.addEventListener('click', function () {
     li.classList.toggle('completed');
 
@@ -89,14 +174,16 @@ function createTaskItem(text, category, priority) {
       checkBtn.textContent = '';
     }
 
+    // Persist the updated completed state
+    saveTasksToStorage();
     updateCounter();
   });
 
-  // --- Task Content (text + badges) ---
+  // --- Task Content (text + badges + date) ---
   const contentDiv = document.createElement('div');
   contentDiv.classList.add('task-content');
 
-  // Task text
+  // Task main text
   const span = document.createElement('span');
   span.classList.add('task-text');
   span.textContent = text;
@@ -118,6 +205,17 @@ function createTaskItem(text, category, priority) {
   metaDiv.appendChild(categoryBadge);
   metaDiv.appendChild(priorityBadge);
 
+  // Date display (only shown if a date was chosen)
+  if (date) {
+    const dateSpan = document.createElement('span');
+    dateSpan.classList.add('task-date');
+
+    // Format the date in a friendly way, e.g. "📅 20 Apr 2026"
+    const formatted = formatDate(date);
+    dateSpan.textContent = '📅 ' + formatted;
+    metaDiv.appendChild(dateSpan);
+  }
+
   contentDiv.appendChild(span);
   contentDiv.appendChild(metaDiv);
 
@@ -127,9 +225,10 @@ function createTaskItem(text, category, priority) {
   deleteBtn.textContent = '🗑';
   deleteBtn.title = 'Delete task';
 
-  // When clicked, remove this task from the list
+  // When clicked, remove this task and update storage
   deleteBtn.addEventListener('click', function () {
     li.remove();
+    saveTasksToStorage();   // Remove from localStorage too
     updateCounter();
   });
 
@@ -139,6 +238,27 @@ function createTaskItem(text, category, priority) {
   li.appendChild(deleteBtn);
 
   return li;
+}
+
+
+// ========================================
+// Date Formatter
+// ========================================
+
+// Converts "2026-04-20" → "20 Apr 2026"
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+
+  // Split the date string into parts
+  const parts = dateStr.split('-');   // ["2026", "04", "20"]
+  const year  = parts[0];
+  const month = parseInt(parts[1], 10) - 1;  // JS months are 0-indexed
+  const day   = parseInt(parts[2], 10);
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                  'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  return day + ' ' + months[month] + ' ' + year;
 }
 
 

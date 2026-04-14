@@ -26,7 +26,7 @@ body {
   border-radius: 16px;
   padding: 40px;
   width: 100%;
-  max-width: 540px;
+  max-width: 600px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -88,7 +88,7 @@ body {
 }
 
 /* ===========================
-   Options Row (Category + Priority)
+   Options Row (Category + Priority + Date)
    =========================== */
 .options-row {
   display: flex;
@@ -111,7 +111,8 @@ body {
   letter-spacing: 0.5px;
 }
 
-.option-group select {
+.option-group select,
+.option-group input[type="date"] {
   padding: 10px 12px;
   border: 2px solid #e0e0e0;
   border-radius: 10px;
@@ -120,9 +121,11 @@ body {
   background: #fff;
   cursor: pointer;
   transition: border-color 0.2s;
+  font-family: inherit;
 }
 
-.option-group select:focus {
+.option-group select:focus,
+.option-group input[type="date"]:focus {
   border-color: #667eea;
 }
 
@@ -200,10 +203,7 @@ body {
   border: 2px solid #ebebf5;
   border-radius: 10px;
   transition: background 0.2s, border-color 0.2s;
-}
-
-/* Fade in new tasks smoothly */
-.task-item {
+  /* Fade in new tasks smoothly */
   animation: fadeIn 0.25s ease;
 }
 
@@ -218,6 +218,7 @@ body {
 .task-item.priority-high {
   background: #fff5f5;
   border-color: #f5c6c6;
+  border-left: 4px solid #e74c3c; /* Red left accent for high priority */
 }
 
 /* ===========================
@@ -278,6 +279,8 @@ body {
 .task-meta {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .badge {
@@ -299,6 +302,15 @@ body {
 .badge-medium { background: #fff5d6; color: #d4a017; }
 .badge-low    { background: #e0f5e0; color: #2e7d32; }
 
+/* Date display inside task */
+.task-date {
+  font-size: 11px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* ===========================
    Completed State
    =========================== */
@@ -319,6 +331,10 @@ body {
 }
 
 .task-item.completed .badge {
+  opacity: 0.5;
+}
+
+.task-item.completed .task-date {
   opacity: 0.5;
 }
 
