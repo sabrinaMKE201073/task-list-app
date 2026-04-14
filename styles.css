@@ -1,5 +1,5 @@
 /* ===========================
-   Global Reset & Base Styles 
+   Global Reset & Base Styles
    =========================== */
 * {
   margin: 0;
@@ -16,6 +16,9 @@ body {
 
   /* Soft purple-to-blue gradient background */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* Add padding so the card doesn't touch screen edges on small screens */
+  padding: 24px 12px;
 }
 
 /* ===========================
@@ -26,7 +29,7 @@ body {
   border-radius: 16px;
   padding: 40px;
   width: 100%;
-  max-width: 600px;
+  max-width: 680px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -88,16 +91,18 @@ body {
 }
 
 /* ===========================
-   Options Row (Category + Priority + Date)
+   Options Row (Category + Priority + Status + Date)
    =========================== */
 .options-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;                /* Wraps on smaller screens */
 }
 
 .option-group {
   flex: 1;
+  min-width: 130px;               /* Prevents too-narrow dropdowns */
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -130,21 +135,27 @@ body {
 }
 
 /* ===========================
+   Filter Section Labels
+   =========================== */
+.filter-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  margin-top: 4px;
+}
+
+/* ===========================
    Filter Bar
    =========================== */
 .filter-bar {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
-}
-
-.filter-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #999;
-  margin-right: 4px;
 }
 
 .filter-btn {
@@ -164,12 +175,18 @@ body {
   color: #667eea;
 }
 
-/* Active filter button */
+/* Active filter button (default purple style) */
 .filter-btn.active {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border-color: transparent;
 }
+
+/* Status-specific active styles for filter buttons */
+.filter-btn.status-filter-wip.active    { background: #ff8c00; border-color: transparent; color: white; }
+.filter-btn.status-filter-ongoing.active{ background: #2196f3; border-color: transparent; color: white; }
+.filter-btn.status-filter-hold.active   { background: #888;    border-color: transparent; color: white; }
+.filter-btn.status-filter-done.active   { background: #4caf50; border-color: transparent; color: white; }
 
 /* ===========================
    Task Counter Text
@@ -177,7 +194,8 @@ body {
 .task-counter {
   font-size: 13px;
   color: #999;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  margin-top: 8px;
   text-align: right;
 }
 
@@ -275,7 +293,7 @@ body {
   word-break: break-word;
 }
 
-/* Small badges showing category & priority */
+/* Small badges showing category, priority, status */
 .task-meta {
   display: flex;
   gap: 6px;
@@ -283,6 +301,9 @@ body {
   align-items: center;
 }
 
+/* ===========================
+   General Badge Style
+   =========================== */
 .badge {
   font-size: 11px;
   font-weight: 600;
@@ -301,6 +322,18 @@ body {
 .badge-high   { background: #ffe5e5; color: #e74c3c; }
 .badge-medium { background: #fff5d6; color: #d4a017; }
 .badge-low    { background: #e0f5e0; color: #2e7d32; }
+
+/* ===========================
+   Status Badge Colors (NEW)
+   WIP → orange
+   Ongoing → blue
+   Hold → gray
+   Done → green
+   =========================== */
+.badge-wip     { background: #fff0d6; color: #cc6600; border: 1px solid #ffcc80; }
+.badge-ongoing { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+.badge-hold    { background: #f0f0f0; color: #555;    border: 1px solid #bdbdbd; }
+.badge-done    { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
 
 /* Date display inside task */
 .task-date {
