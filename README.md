@@ -2,9 +2,9 @@
 
 ## 🚀 Overview
 
-A simple task management web app built using HTML, CSS, and JavaScript with the help of Google Antigravity.
+A simple yet structured task management web app built using Claude Code + Google Antigravity to explore agent-based development workflows.
 
-This app helps users manage daily tasks with categories, priorities, and filtering.
+This project focuses on improving productivity through task organization, filtering, and status tracking.
 
 ---
 
