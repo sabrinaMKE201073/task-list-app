@@ -1,17 +1,21 @@
 // ========================================
-// Get references to the HTML elements 
+// Get references to the HTML elements
 // ========================================
 const taskInput      = document.getElementById('task-input');       // The text input
 const addBtn         = document.getElementById('add-btn');           // The "Add" button
 const categorySelect = document.getElementById('category-select');   // Category dropdown
 const prioritySelect = document.getElementById('priority-select');   // Priority dropdown
+const statusSelect   = document.getElementById('status-select');     // Status dropdown (NEW)
 const dateInput      = document.getElementById('date-input');        // The date picker
 const taskList       = document.getElementById('task-list');         // The <ul> list
 const taskCounter    = document.getElementById('task-counter');      // The counter text
-const filterBtns     = document.querySelectorAll('.filter-btn');     // All filter buttons
 
-// Keep track of the currently active filter
-let currentFilter = 'All';
+// All filter buttons (both category and status filter bars)
+const filterBtns = document.querySelectorAll('.filter-btn');
+
+// Keep track of the two active filters separately
+let currentCategoryFilter = 'All';  // Category filter (All, Work, Learning, etc.)
+let currentStatusFilter   = 'All';  // Status filter (All, WIP, Ongoing, Hold, Done)
 
 
 // ========================================
@@ -39,6 +43,7 @@ function saveTasksToStorage() {
       text:      li.dataset.text,
       category:  li.dataset.category,
       priority:  li.dataset.priority,
+      status:    li.dataset.status,       // Save status (NEW)
       date:      li.dataset.date,
       completed: li.classList.contains('completed')
     });
@@ -59,17 +64,19 @@ window.addEventListener('load', function () {
 
   savedTasks.forEach(function (taskData) {
     // Recreate each task element from stored data
+    // Use 'WIP' as the default status for older tasks that don't have one saved
     const taskItem = createTaskItem(
       taskData.text,
       taskData.category,
       taskData.priority,
+      taskData.status || 'WIP',   // (NEW) fallback for old saved data
       taskData.date,
-      taskData.completed   // pass the saved completed state
+      taskData.completed          // Pass the saved completed state
     );
     taskList.appendChild(taskItem);
   });
 
-  // Apply the current filter and update the counter after restoring
+  // Apply the current filters and update the counter after restoring
   applyFilter();
   updateCounter();
 });
@@ -99,13 +106,17 @@ function addTask() {
     return;
   }
 
-  // Read the selected category, priority, and date
+  // Read the selected category, priority, status, and date
   const category = categorySelect.value;
   const priority = prioritySelect.value;
-  const date     = dateInput.value;       // e.g. "2026-04-20" or ""
+  const status   = statusSelect.value;   // (NEW) Read selected status
+  const date     = dateInput.value;      // e.g. "2026-04-20" or ""
+
+  // If the status is "Done", mark the task as completed from the start
+  const isCompleted = (status === 'Done');
 
   // Create the task element and add it to the list
-  const taskItem = createTaskItem(taskText, category, priority, date, false);
+  const taskItem = createTaskItem(taskText, category, priority, status, date, isCompleted);
   taskList.appendChild(taskItem);
 
   // Save to localStorage so the task persists after refresh
@@ -115,7 +126,7 @@ function addTask() {
   taskInput.value = '';
   taskInput.focus();
 
-  // Apply the current filter (hide the task if it doesn't match)
+  // Apply the current filters (hide the task if it doesn't match)
   applyFilter();
 
   // Update the counter
@@ -132,9 +143,10 @@ function addTask() {
 //   text      — the task description
 //   category  — e.g. "Work", "Personal"
 //   priority  — e.g. "High", "Medium", "Low"
+//   status    — e.g. "WIP", "Ongoing", "Hold", "Done" (NEW)
 //   date      — a date string like "2026-04-20", or an empty string if none
 //   completed — boolean, true if the task was already marked done
-function createTaskItem(text, category, priority, date, completed) {
+function createTaskItem(text, category, priority, status, date, completed) {
   // Create the list item (<li>)
   const li = document.createElement('li');
   li.classList.add('task-item');
@@ -143,6 +155,7 @@ function createTaskItem(text, category, priority, date, completed) {
   li.dataset.text     = text;
   li.dataset.category = category;
   li.dataset.priority = priority;
+  li.dataset.status   = status;    // Store status (NEW)
   li.dataset.date     = date;
 
   // Add a priority class for colour highlighting
@@ -188,7 +201,7 @@ function createTaskItem(text, category, priority, date, completed) {
   span.classList.add('task-text');
   span.textContent = text;
 
-  // Badges row (category + priority)
+  // Badges row (category + priority + status)
   const metaDiv = document.createElement('div');
   metaDiv.classList.add('task-meta');
 
@@ -202,8 +215,15 @@ function createTaskItem(text, category, priority, date, completed) {
   priorityBadge.classList.add('badge', 'badge-' + priority.toLowerCase());
   priorityBadge.textContent = priority;
 
+  // Status badge (NEW)
+  // Shows a coloured badge to make the status visually clear
+  const statusBadge = document.createElement('span');
+  statusBadge.classList.add('badge', 'badge-' + status.toLowerCase());
+  statusBadge.textContent = getStatusLabel(status);  // e.g. "🔶 WIP"
+
   metaDiv.appendChild(categoryBadge);
   metaDiv.appendChild(priorityBadge);
+  metaDiv.appendChild(statusBadge);   // Add status badge (NEW)
 
   // Date display (only shown if a date was chosen)
   if (date) {
@@ -242,6 +262,22 @@ function createTaskItem(text, category, priority, date, completed) {
 
 
 // ========================================
+// Status Label Helper (NEW)
+// ========================================
+
+// Returns a friendly display label for each status value
+function getStatusLabel(status) {
+  switch (status) {
+    case 'WIP':     return '🔶 WIP';
+    case 'Ongoing': return '🔵 Ongoing';
+    case 'Hold':    return '⏸ Hold';
+    case 'Done':    return '✅ Done';
+    default:        return status;
+  }
+}
+
+
+// ========================================
 // Date Formatter
 // ========================================
 
@@ -263,32 +299,54 @@ function formatDate(dateStr) {
 
 
 // ========================================
-// Filter Tasks by Category
+// Filter Tasks (by Category AND Status)
 // ========================================
 
-// Add click listeners to each filter button
+// Add click listeners to ALL filter buttons (both filter bars)
 filterBtns.forEach(function (btn) {
   btn.addEventListener('click', function () {
-    // Remove "active" style from all buttons
-    filterBtns.forEach(function (b) {
-      b.classList.remove('active');
-    });
+    const filterType = btn.dataset.filterType;   // "category" or "status"
+    const filterValue = btn.dataset.filter;       // e.g. "All", "Work", "WIP"
 
-    // Mark the clicked button as active
-    btn.classList.add('active');
+    if (filterType === 'category') {
+      // Update category filter and highlight the correct button
+      document.querySelectorAll('#category-filter-bar .filter-btn').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      currentCategoryFilter = filterValue;
 
-    // Update the current filter and apply it
-    currentFilter = btn.dataset.filter;
+    } else if (filterType === 'status') {
+      // Update status filter and highlight the correct button
+      document.querySelectorAll('#status-filter-bar .filter-btn').forEach(function (b) {
+        b.classList.remove('active');
+      });
+      btn.classList.add('active');
+      currentStatusFilter = filterValue;
+    }
+
+    // Re-apply the combined filter
     applyFilter();
   });
 });
 
-// Show or hide tasks based on the current filter
+// Show or hide tasks based on BOTH active filters (category AND status)
 function applyFilter() {
   const allTasks = taskList.querySelectorAll('.task-item');
 
   allTasks.forEach(function (task) {
-    if (currentFilter === 'All' || task.dataset.category === currentFilter) {
+    // Check if the task matches the category filter
+    const matchesCategory =
+      currentCategoryFilter === 'All' ||
+      task.dataset.category === currentCategoryFilter;
+
+    // Check if the task matches the status filter
+    const matchesStatus =
+      currentStatusFilter === 'All' ||
+      task.dataset.status === currentStatusFilter;
+
+    // Show the task only if it passes BOTH filters
+    if (matchesCategory && matchesStatus) {
       task.style.display = '';      // Show the task
     } else {
       task.style.display = 'none';  // Hide the task
@@ -315,9 +373,11 @@ function updateCounter() {
   const remaining = visibleTasks.length - completedVisible.length;
 
   if (allTasks.length === 0) {
+    // No tasks exist at all
     taskCounter.textContent = 'No tasks yet. Add one above!';
   } else if (visibleTasks.length === 0) {
-    taskCounter.textContent = 'No tasks in this category.';
+    // Tasks exist but none match the current filter
+    taskCounter.textContent = 'No tasks match the current filter.';
   } else {
     taskCounter.textContent =
       remaining + ' task' + (remaining !== 1 ? 's' : '') +
