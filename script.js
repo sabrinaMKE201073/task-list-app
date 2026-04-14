@@ -1,5 +1,5 @@
 // ========================================
-// Get references to the HTML elements
+// Get references to the HTML elements 
 // ========================================
 const taskInput      = document.getElementById('task-input');       // The text input
 const addBtn         = document.getElementById('add-btn');           // The "Add" button
