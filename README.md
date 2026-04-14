@@ -1,15 +1,52 @@
-📝 Task List App (Built with Google Antigravity)
-🚀 Overview
+# 📝 Task List App
 
-This is a simple task management web application built using HTML, CSS, and JavaScript, with the help of Google Antigravity.
+## 🚀 Overview
 
-The app allows users to manage their daily tasks efficiently with features like categorization, prioritization, and filtering.
+A simple task management web app built using HTML, CSS, and JavaScript with the help of Google Antigravity.
 
-✨ Features
-➕ Add new tasks
-✅ Mark tasks as completed
-🗑️ Delete tasks
-🗂️ Categorize tasks (Work, Learning, Personal, Hobby)
-🔥 Set priority levels (High, Medium, Low)
-🎯 Filter tasks by category
-🎨 Highlight high-priority tasks
+This app helps users manage daily tasks with categories, priorities, and filtering.
+
+---
+
+## ✨ Features
+
+* Add new tasks
+* Mark tasks as completed
+* Delete tasks
+* Categorize tasks (Work, Learning, Personal, Hobby)
+* Set priority (High, Medium, Low)
+* Filter tasks by category
+* Highlight high-priority tasks
+
+---
+
+## 🛠️ Tech Stack
+
+* HTML
+* CSS
+* JavaScript
+
+---
+
+## 🌐 Live Demo
+
+https://sabrinaMKE201073.github.io/task-list-app
+
+---
+
+## 🧠 What I Learned
+
+* Basic web development (HTML, CSS, JS)
+* DOM manipulation
+* Debugging UI and logic issues
+* Using AI tools (Google Antigravity)
+* Deploying with GitHub Pages
+
+---
+
+## 🚧 Future Improvements
+
+* Save tasks (localStorage)
+* Edit task feature
+* Add simple dashboard
+
