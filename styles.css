@@ -1,516 +1,859 @@
-/* ===========================
-   Global Reset & Base Styles
-   =========================== */
-* {
+/* =============================================
+   GLOBAL RESET & BASE STYLES
+   Normalize browser defaults for consistency
+   ============================================= */
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* =============================================
+   DESIGN TOKENS (Custom Properties)
+   Change these to retheme the whole app easily
+   ============================================= */
+:root {
+  /* Primary accent — deep indigo */
+  --accent:       #5c6bc0;
+  --accent-light: #e8eaf6;
+  --accent-dark:  #3949ab;
+
+  /* Backgrounds */
+  --bg-page:      #f4f5f7;
+  --bg-sidebar:   #1e1f21;
+  --bg-card:      #ffffff;
+  --bg-input:     #f7f8fa;
+
+  /* Text */
+  --text-primary:   #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted:     #9ca3af;
+  --text-sidebar:   #d1d5db;
+
+  /* Borders */
+  --border:       #e5e7eb;
+  --border-focus: #5c6bc0;
+
+  /* Status palette */
+  --wip-bg:      #fff8e1;   --wip-text:     #e65100;  --wip-border: #ffcc02;
+  --ongoing-bg:  #e3f2fd;   --ongoing-text: #1565c0;  --ongoing-border: #90caf9;
+  --hold-bg:     #f3f4f6;   --hold-text:    #4b5563;  --hold-border: #d1d5db;
+  --done-bg:     #f0fdf4;   --done-text:    #15803d;  --done-border: #86efac;
+
+  /* Priority palette */
+  --high-bg:    #fff1f2;  --high-text:   #be123c;  --high-border: #fda4af;
+  --medium-bg:  #fefce8;  --medium-text: #a16207;  --medium-border: #fde047;
+  --low-bg:     #f0fdf4;  --low-text:    #15803d;  --low-border: #86efac;
+
+  /* Category palette */
+  --work-bg:      #eef2ff;  --work-text:      #4338ca;
+  --learning-bg:  #fffbeb;  --learning-text:  #b45309;
+  --personal-bg:  #f0fdf4;  --personal-text:  #166534;
+  --hobby-bg:     #faf5ff;  --hobby-text:     #7c3aed;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Transition */
+  --transition: 0.18s ease;
+}
+
+/* =============================================
+   BODY & TYPOGRAPHY
+   ============================================= */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-page);
   min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* =============================================
+   PAGE LAYOUT — Sidebar + Main
+   ============================================= */
+.page-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* =============================================
+   SIDEBAR
+   ============================================= */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 12px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Logo / app name in sidebar */
+.sidebar-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  /* Soft purple-to-blue gradient background */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-
-  /* Add padding so the card doesn't touch screen edges on small screens */
-  padding: 24px 12px;
-}
-
-/* ===========================
-   Main Card Container
-   =========================== */
-.container {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 40px;
-  width: 100%;
-  max-width: 680px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-}
-
-/* ===========================
-   App Title
-   =========================== */
-.app-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
+  gap: 10px;
+  padding: 0 8px;
   margin-bottom: 28px;
-  text-align: center;
 }
 
-/* ===========================
-   Input Area (text box + button)
-   =========================== */
+.sidebar-logo-icon {
+  font-size: 22px;
+}
+
+.sidebar-logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+/* Navigation inside sidebar */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Small uppercase section headings */
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #6b7280;
+  padding: 0 10px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
+
+/* Individual nav buttons */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-sidebar);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition), color var(--transition);
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+/* Highlighted active nav item */
+.nav-item.active {
+  background: rgba(92, 107, 192, 0.25);
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 15px;
+}
+
+/* =============================================
+   MAIN CONTENT AREA
+   ============================================= */
+.main-content {
+  flex: 1;
+  min-width: 0;           /* Prevents flex overflow */
+  padding: 36px 40px;
+  max-width: 860px;
+}
+
+/* =============================================
+   PAGE HEADER
+   ============================================= */
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* =============================================
+   CARD — Reusable white panel
+   ============================================= */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* =============================================
+   ADD TASK CARD — Input + Options
+   ============================================= */
+.add-task-card {
+  /* slight left accent stripe */
+  border-left: 3px solid var(--accent);
+}
+
+/* Text input + button row */
 .input-area {
   display: flex;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
+/* Task text input */
 .input-area input {
   flex: 1;
-  /* Takes up remaining space */
-  padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 15px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-/* Highlight the input when focused */
 .input-area input:focus {
-  border-color: #667eea;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.12);
+  background: #fff;
 }
 
+/* "Add Task" button */
 .input-area button {
-  padding: 12px 22px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  padding: 11px 20px;
+  background: var(--accent);
+  color: #fff;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  white-space: nowrap;
+  transition: background var(--transition), transform 0.1s;
 }
 
-/* Slightly fade button on hover */
 .input-area button:hover {
-  opacity: 0.88;
+  background: var(--accent-dark);
 }
 
-/* Tiny "click" effect */
 .input-area button:active {
   transform: scale(0.97);
 }
 
-/* ===========================
-   Options Row (Category + Priority + Status + Date)
-   =========================== */
+/* =============================================
+   OPTIONS ROW (Category / Priority / Status / Date)
+   ============================================= */
 .options-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
   flex-wrap: wrap;
-  /* Wraps on smaller screens */
 }
 
 .option-group {
   flex: 1;
-  min-width: 130px;
-  /* Prevents too-narrow dropdowns */
+  min-width: 120px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
+/* Label above each dropdown */
 .option-group label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: #888;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+/* Dropdown / date inputs */
 .option-group select,
 .option-group input[type="date"] {
-  padding: 10px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 14px;
-  outline: none;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color 0.2s;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
   font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
 }
 
 .option-group select:focus,
 .option-group input[type="date"]:focus {
-  border-color: #667eea;
+  border-color: var(--border-focus);
+  background: #fff;
 }
 
-/* ===========================
-   Filter Section Labels
-   =========================== */
-.filter-section-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-  margin-top: 4px;
+/* =============================================
+   TOOLBAR CARD — Search + Sort
+   ============================================= */
+.toolbar-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
 }
 
-/* ===========================
-   Filter Bar
-   =========================== */
-.filter-bar {
+/* Search field wrapper (icon + input) */
+.search-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 9px 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-wrapper:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.1);
+  background: #fff;
+}
+
+.search-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Search text input (no border of its own) */
+#search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+}
+
+#search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Sort section */
+.sort-wrapper {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.sort-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+#sort-select {
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+}
+
+#sort-select:focus {
+  border-color: var(--border-focus);
+}
+
+/* =============================================
+   FILTER CHIPS ROW
+   ============================================= */
+.filter-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
-.filter-btn {
-  padding: 6px 14px;
-  border: 2px solid #e8e8f0;
-  border-radius: 20px;
-  background: #fff;
-  font-size: 12px;
+.filter-chips-label {
+  font-size: 11px;
   font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Individual chip button */
+.chip {
+  padding: 5px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-card);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary);
   cursor: pointer;
-  color: #666;
-  transition: all 0.2s;
+  transition: all var(--transition);
 }
 
-.filter-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-/* Active filter button (default purple style) */
-.filter-btn.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-color: transparent;
+/* Default "All" active chip */
+.chip.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
-/* Status-specific active styles for filter buttons */
-.filter-btn.status-filter-wip.active {
-  background: #ff8c00;
-  border-color: transparent;
-  color: white;
-}
+/* Status-specific active chip colours */
+.chip-wip.active   { background: #e65100; border-color: #e65100; color: #fff; }
+.chip-ongoing.active { background: #1565c0; border-color: #1565c0; color: #fff; }
+.chip-hold.active  { background: #4b5563; border-color: #4b5563; color: #fff; }
+.chip-done.active  { background: #15803d; border-color: #15803d; color: #fff; }
 
-.filter-btn.status-filter-ongoing.active {
-  background: #2196f3;
-  border-color: transparent;
-  color: white;
-}
-
-.filter-btn.status-filter-hold.active {
-  background: #888;
-  border-color: transparent;
-  color: white;
-}
-
-.filter-btn.status-filter-done.active {
-  background: #4caf50;
-  border-color: transparent;
-  color: white;
-}
-
-/* ===========================
-   Task Counter Text
-   =========================== */
+/* =============================================
+   TASK COUNTER
+   ============================================= */
 .task-counter {
-  font-size: 13px;
-  color: #999;
-  margin-bottom: 16px;
-  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
   text-align: right;
+  margin-bottom: 12px;
 }
 
-/* ===========================
-   Task List (ul)
-   =========================== */
-#task-list {
+/* =============================================
+   TASK LIST
+   ============================================= */
+.task-list {
   list-style: none;
-  /* Remove default bullet points */
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-/* ===========================
-   Individual Task Item (li)
-   =========================== */
+/* =============================================
+   TASK ITEM CARD
+   ============================================= */
 .task-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  background: #f8f8fc;
-  border: 2px solid #ebebf5;
-  border-radius: 10px;
-  transition: background 0.2s, border-color 0.2s, opacity 0.3s;
-  /* Fade in new tasks smoothly */
-  animation: fadeIn 0.25s ease;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), border-color var(--transition), opacity var(--transition);
+  animation: slideIn 0.22s ease;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Smooth entry animation for new tasks */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
-/* ===========================
-   High Priority Highlight
-   =========================== */
-.task-item.priority-high {
+.task-item:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #c7d2fe;
+}
+
+/* ---- Priority left-border accents ---- */
+.task-item.priority-high   { border-left: 3px solid var(--high-border);   }
+.task-item.priority-medium { border-left: 3px solid var(--medium-border); }
+.task-item.priority-low    { border-left: 3px solid var(--low-border);    }
+
+/* ---- Overdue highlight (red glow) ---- */
+.task-item.overdue:not(.completed) {
   background: #fff5f5;
-  border-color: #f5c6c6;
-  border-left: 4px solid #e74c3c;
-  /* Red left accent for high priority */
+  border-color: #fca5a5;
 }
 
-/* ===========================
-   Medium Priority (subtle)
-   =========================== */
-.task-item.priority-medium {
-  background: #fffdf5;
-  border-color: #f0e6c3;
+/* ---- Completed / Done state ---- */
+.task-item.completed {
+  opacity: 0.6;
+  background: #fafafa;
 }
 
-/* ===========================
-   Low Priority (subtle)
-   =========================== */
-.task-item.priority-low {
-  background: #f5fdf5;
-  border-color: #c3e6c9;
+.task-item.completed .task-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
 }
 
-/* ===========================
-   Checkbox (complete button)
-   =========================== */
+.task-item.completed .check-btn {
+  background: #15803d;
+  border-color: #15803d;
+  color: #fff;
+}
+
+/* =============================================
+   CHECKBOX BUTTON
+   ============================================= */
 .check-btn {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid #ccc;
-  background: white;
+  border: 2px solid #d1d5db;
+  background: #fff;
   cursor: pointer;
   flex-shrink: 0;
-  /* Don't let it shrink */
-  transition: background 0.2s, border-color 0.2s;
+  margin-top: 2px;          /* Align with first line of text */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .check-btn:hover {
-  border-color: #667eea;
+  border-color: var(--accent);
+  background: var(--accent-light);
 }
 
-/* ===========================
-   Task Content (middle area)
-   =========================== */
+/* =============================================
+   TASK CONTENT AREA (text + meta)
+   ============================================= */
 .task-content {
   flex: 1;
-  /* Fills the middle space */
+  min-width: 0;       /* Prevent overflow in flex */
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
+/* ---- Editable task text span ---- */
 .task-text {
-  font-size: 15px;
-  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
   word-break: break-word;
+  cursor: text;               /* Shows "I-beam" to hint at editability */
+  border-radius: 4px;
+  padding: 1px 3px;
+  transition: background var(--transition);
+  outline: none;
 }
 
-/* Small badges showing category, priority, status */
+/* Hover state — subtle highlight to show it's editable */
+.task-text:hover {
+  background: var(--accent-light);
+}
+
+/* Active editing state */
+.task-text.editing {
+  background: #fff;
+  border: 1.5px solid var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.1);
+  cursor: text;
+  padding: 2px 6px;
+}
+
+/* ---- Meta (badges + date) row ---- */
 .task-meta {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
   align-items: center;
 }
 
-/* ===========================
-   General Badge Style
-   =========================== */
+/* =============================================
+   BADGES — Category, Priority
+   ============================================= */
 .badge {
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 2px 9px;
+  border-radius: 20px;
   display: inline-block;
+  border: 1px solid transparent;
 }
 
-/* Category badge colors */
-.badge-work {
-  background: #e8edff;
-  color: #4a6cf7;
-}
+/* Category badge colours */
+.badge-work     { background: var(--work-bg);     color: var(--work-text);     }
+.badge-learning { background: var(--learning-bg); color: var(--learning-text); }
+.badge-personal { background: var(--personal-bg); color: var(--personal-text); }
+.badge-hobby    { background: var(--hobby-bg);    color: var(--hobby-text);    }
 
-.badge-learning {
-  background: #fef3e2;
-  color: #d4880f;
-}
+/* Priority badge colours */
+.badge-high   { background: var(--high-bg);   color: var(--high-text);   border-color: var(--high-border);   }
+.badge-medium { background: var(--medium-bg); color: var(--medium-text); border-color: var(--medium-border); }
+.badge-low    { background: var(--low-bg);    color: var(--low-text);    border-color: var(--low-border);    }
 
-.badge-personal {
-  background: #e8f8ee;
-  color: #2d9a5a;
-}
-
-.badge-hobby {
-  background: #f5e8ff;
-  color: #9b4dca;
-}
-
-/* Priority badge colors */
-.badge-high {
-  background: #ffe5e5;
-  color: #e74c3c;
-}
-
-.badge-medium {
-  background: #fff5d6;
-  color: #d4a017;
-}
-
-.badge-low {
-  background: #e0f5e0;
-  color: #2e7d32;
-}
-
-/* ===========================
-   Status Badge Colors
-   WIP → orange
-   Ongoing → blue
-   Hold → gray
-   Done → green
-   =========================== */
-.badge-wip {
-  background: #fff0d6;
-  color: #cc6600;
-  border: 1px solid #ffcc80;
-}
-
-.badge-ongoing {
-  background: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.badge-hold {
-  background: #f0f0f0;
-  color: #555;
-  border: 1px solid #bdbdbd;
-}
-
-.badge-done {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-/* ===========================
-   Inline Status Dropdown (inside each task)
-   Styled to look like a small badge-sized select
-   =========================== */
+/* =============================================
+   INLINE STATUS DROPDOWN (on each task)
+   Styled to look like a badge
+   ============================================= */
 .task-status-select {
   font-size: 11px;
   font-weight: 600;
-  padding: 2px 4px;
-  border-radius: 10px;
+  font-family: inherit;
+  padding: 2px 6px;
+  border-radius: 20px;
+  border: 1px solid transparent;
   outline: none;
   cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
   appearance: auto;
+  transition: opacity var(--transition);
 }
 
-/* Color-code the status dropdown to match the badge palette */
-.task-status-select.status-wip {
-  background: #fff0d6;
-  color: #cc6600;
-  border: 1px solid #ffcc80;
-}
+/* Colour-coded to match status */
+.task-status-select.status-wip     { background: var(--wip-bg);     color: var(--wip-text);     border-color: var(--wip-border);     }
+.task-status-select.status-ongoing { background: var(--ongoing-bg); color: var(--ongoing-text); border-color: var(--ongoing-border); }
+.task-status-select.status-hold    { background: var(--hold-bg);    color: var(--hold-text);    border-color: var(--hold-border);    }
+.task-status-select.status-done    { background: var(--done-bg);    color: var(--done-text);    border-color: var(--done-border);    }
 
-.task-status-select.status-ongoing {
-  background: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.task-status-select.status-hold {
-  background: #f0f0f0;
-  color: #555;
-  border: 1px solid #bdbdbd;
-}
-
-.task-status-select.status-done {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-/* Date display inside task */
+/* =============================================
+   DATE DISPLAY INSIDE TASK
+   ============================================= */
 .task-date {
   font-size: 11px;
-  color: #999;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 3px;
 }
 
-/* ===========================
-   Completed State
-   =========================== */
-.task-item.completed {
-  background: #f0f8f0;
-  border-color: #c3e6c3;
-  opacity: 0.75;
-  /* Slightly faded to show task is done */
+/* Overdue date text gets a red colour */
+.task-date.overdue-date {
+  color: #dc2626;
+  font-weight: 600;
 }
 
-.task-item.completed .task-text {
-  text-decoration: line-through;
-  color: #aaa;
+/* Small "overdue" pill badge shown beside the date */
+.overdue-badge {
+  font-size: 10px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-weight: 700;
 }
 
-.task-item.completed .check-btn {
-  background: #4caf50;
-  border-color: #4caf50;
-  color: white;
-}
-
-.task-item.completed .badge {
-  opacity: 0.5;
-}
-
-.task-item.completed .task-date {
-  opacity: 0.5;
-}
-
-/* Keep the status dropdown readable even when completed */
-.task-item.completed .task-status-select {
-  opacity: 0.7;
-}
-
-/* ===========================
-   Delete Button
-   =========================== */
+/* =============================================
+   DELETE BUTTON
+   ============================================= */
 .delete-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 15px;
   cursor: pointer;
-  color: #ccc;
-  transition: color 0.2s;
-  padding: 2px 4px;
-  border-radius: 6px;
+  color: #d1d5db;
+  padding: 3px 5px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition), background var(--transition);
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .delete-btn:hover {
-  color: #e74c3c;
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+/* =============================================
+   EMPTY STATE (shown when list is empty)
+   ============================================= */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-muted);
+  gap: 10px;
+}
+
+.empty-icon {
+  font-size: 40px;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+/* =============================================
+   ARCHIVE SECTION
+   ============================================= */
+.archive-section {
+  margin-top: 24px;
+}
+
+.archive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition);
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.archive-header:hover {
+  background: #f0f2f5;
+}
+
+.archive-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.archive-chevron {
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: transform var(--transition);
+}
+
+/* Chevron rotates when archive is collapsed */
+.archive-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Archive list — faded tasks */
+.archive-list .task-item {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.archive-list .task-item:hover {
+  opacity: 0.85;
+}
+
+/* =============================================
+   TASK SECTION (wrapper)
+   ============================================= */
+.task-section {
+  min-height: 20px;
+}
+
+/* =============================================
+   RESPONSIVE — Tablet / Mobile
+   ============================================= */
+
+/* Tablet: collapse sidebar to icon bar */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 56px;
+    padding: 16px 8px;
+    align-items: center;
+  }
+
+  .sidebar-logo-text,
+  .nav-section-label,
+  .nav-item span:not(.nav-icon) {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .main-content {
+    padding: 24px 20px;
+  }
+}
+
+/* Phone: hide sidebar entirely, full-width layout */
+@media (max-width: 600px) {
+  .page-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    display: none;     /* Hidden on very small screens */
+  }
+
+  .main-content {
+    padding: 20px 14px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .options-row {
+    gap: 8px;
+  }
+
+  .option-group {
+    min-width: 100%;   /* Stack dropdowns vertically */
+  }
+
+  .toolbar-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sort-wrapper {
+    justify-content: flex-end;
+  }
 }
