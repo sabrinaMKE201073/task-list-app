@@ -1,334 +1,353 @@
-// ========================================
-// Get references to the HTML elements
-// ========================================
-const taskInput = document.getElementById('task-input');       // The text input
-const addBtn = document.getElementById('add-btn');           // The "Add" button
-const categorySelect = document.getElementById('category-select');   // Category dropdown
-const prioritySelect = document.getElementById('priority-select');   // Priority dropdown
-const statusSelect = document.getElementById('status-select');     // Status dropdown
-const dateInput = document.getElementById('date-input');        // The date picker
-const taskList = document.getElementById('task-list');         // The <ul> list
-const taskCounter = document.getElementById('task-counter');      // The counter text
-
-// All filter buttons (both category and status filter bars)
-const filterBtns = document.querySelectorAll('.filter-btn');
-
-// Keep track of the two active filters separately
-let currentCategoryFilter = 'All';  // Category filter (All, Work, Learning, etc.)
-let currentStatusFilter = 'All';  // Status filter (All, WIP, Ongoing, Hold, Done)
+// =============================================
+// TaskFlow — script.js
+// Notion-inspired task productivity app
+// Features:
+//   • Add, edit (inline), delete tasks
+//   • Category, Priority, Status, Due Date
+//   • Search by keyword
+//   • Sort by due date
+//   • Overdue task highlighting
+//   • Archive (completed tasks) section
+//   • Filter by category (sidebar) and status (chips)
+//   • All data saved to localStorage
+// =============================================
 
 
-// ========================================
-// localStorage Helpers
-// ========================================
+// =============================================
+// 1. ELEMENT REFERENCES
+//    Get all the HTML elements we need to work with
+// =============================================
 
-// Key used to store tasks in localStorage
-const STORAGE_KEY = 'myTaskListData';
+const taskInput      = document.getElementById('task-input');       // Main text input
+const addBtn         = document.getElementById('add-btn');          // "Add Task" button
+const categorySelect = document.getElementById('category-select');  // Category dropdown
+const prioritySelect = document.getElementById('priority-select');  // Priority dropdown
+const statusSelect   = document.getElementById('status-select');    // Status dropdown
+const dateInput      = document.getElementById('date-input');       // Due date picker
+const taskList       = document.getElementById('task-list');        // Active tasks <ul>
+const archiveList    = document.getElementById('archive-list');     // Archive <ul>
+const archiveSection = document.getElementById('archive-section'); // Archive wrapper
+const archiveToggle  = document.getElementById('archive-toggle');   // Click to expand/collapse
+const archiveChevron = document.getElementById('archive-chevron'); // The ▾ icon
+const taskCounter    = document.getElementById('task-counter');     // Counter text
+const searchInput    = document.getElementById('search-input');     // Search box
+const sortSelect     = document.getElementById('sort-select');      // Sort dropdown
+const emptyState     = document.getElementById('empty-state');      // "No tasks" message
 
-// Load all saved tasks from localStorage (returns an array of task objects)
+// All status filter chip buttons
+const statusChips = document.querySelectorAll('#status-filter-bar .chip');
+
+// All category nav items in the sidebar
+const categoryNavItems = document.querySelectorAll('[data-filter-type="category"]');
+
+// The main navigation buttons (All Tasks / Active / Archive)
+const navAll     = document.getElementById('nav-all');
+const navActive  = document.getElementById('nav-active');
+const navArchive = document.getElementById('nav-archive');
+
+
+// =============================================
+// 2. STATE VARIABLES
+//    Track what filters and view are currently active
+// =============================================
+
+let currentCategoryFilter = 'All';  // "All", "Work", "Learning", "Personal", "Hobby"
+let currentStatusFilter   = 'All';  // "All", "WIP", "Ongoing", "Hold", "Done"
+let currentNavView        = 'all';  // "all", "active", "archive"
+let currentSort           = 'default'; // "default", "date-asc", "date-desc"
+let isArchiveCollapsed    = false;  // Whether the archive section is folded up
+
+
+// =============================================
+// 3. LOCALSTORAGE HELPERS
+//    Simple functions to read/write tasks to localStorage
+// =============================================
+
+// Key to use in localStorage
+const STORAGE_KEY = 'taskFlowData';
+
+/**
+ * Load all saved tasks from localStorage.
+ * Returns an array of task objects, or [] if nothing is saved yet.
+ */
 function loadTasksFromStorage() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  // If nothing saved yet, return an empty array
   return saved ? JSON.parse(saved) : [];
 }
 
-// Save all current tasks to localStorage
+/**
+ * Collect every task currently in the DOM and save to localStorage.
+ * Reads both the active list and the archive list.
+ */
 function saveTasksToStorage() {
-  // Collect every task item in the list and build a data object for each
-  const allTasks = taskList.querySelectorAll('.task-item');
-  const tasksData = [];
+  const allItems = [
+    ...taskList.querySelectorAll('.task-item'),
+    ...archiveList.querySelectorAll('.task-item')
+  ];
 
-  allTasks.forEach(function (li) {
-    tasksData.push({
-      text: li.dataset.text,
-      category: li.dataset.category,
-      priority: li.dataset.priority,
-      status: li.dataset.status,       // Save current status
-      date: li.dataset.date,
+  const tasksData = allItems.map(function (li) {
+    return {
+      text:      li.dataset.text,
+      category:  li.dataset.category,
+      priority:  li.dataset.priority,
+      status:    li.dataset.status,
+      date:      li.dataset.date,
       completed: li.classList.contains('completed')
-    });
+    };
   });
 
-  // Store as a JSON string
   localStorage.setItem(STORAGE_KEY, JSON.stringify(tasksData));
 }
 
 
-// ========================================
-// On Page Load — Restore Saved Tasks
-// ========================================
+// =============================================
+// 4. PAGE LOAD — Restore Saved Tasks
+// =============================================
 
-// When the page first loads, pull tasks from localStorage and display them
 window.addEventListener('load', function () {
   const savedTasks = loadTasksFromStorage();
 
   savedTasks.forEach(function (taskData) {
-    // Recreate each task element from stored data
-    // Use 'WIP' as the default status for older tasks that don't have one saved
+    // Rebuild the task element from stored data
     const taskItem = createTaskItem(
       taskData.text,
       taskData.category,
       taskData.priority,
-      taskData.status || 'WIP',   // Fallback for old saved data
+      taskData.status || 'WIP', // Fallback for older saved data
       taskData.date,
-      taskData.completed          // Pass the saved completed state
+      taskData.completed
     );
-    taskList.appendChild(taskItem);
+
+    // Completed tasks go directly into the archive list
+    if (taskData.completed) {
+      archiveList.appendChild(taskItem);
+    } else {
+      taskList.appendChild(taskItem);
+    }
   });
 
-  // Apply the current filters and update the counter after restoring
-  applyFilter();
+  // Show or hide the archive section depending on whether it has items
+  refreshArchiveVisibility();
+
+  // Apply sorting, filters, and update the counter
+  applySortAndFilter();
   updateCounter();
 });
 
 
-// ========================================
-// Add Task
-// ========================================
+// =============================================
+// 5. ADD TASK
+// =============================================
 
-// When the "Add" button is clicked, call addTask()
+// Click the button to add a task
 addBtn.addEventListener('click', addTask);
 
-// Also allow pressing the Enter key to add a task
+// Press Enter in the text input to add a task
 taskInput.addEventListener('keydown', function (event) {
   if (event.key === 'Enter') {
     addTask();
   }
 });
 
+/**
+ * Reads the input fields, creates a new task, and appends it to the list.
+ */
 function addTask() {
-  // Read and clean up the text the user typed
   const taskText = taskInput.value.trim();
 
-  // Don't add an empty task
+  // Don't add if the input is empty
   if (taskText === '') {
     taskInput.focus();
     return;
   }
 
-  // Read the selected category, priority, status, and date
-  const category = categorySelect.value;
-  const priority = prioritySelect.value;
-  const status = statusSelect.value;    // Read selected status
-  const date = dateInput.value;         // e.g. "2026-04-20" or ""
+  const category  = categorySelect.value;
+  const priority  = prioritySelect.value;
+  const status    = statusSelect.value;
+  const date      = dateInput.value;           // "YYYY-MM-DD" or ""
+  const completed = (status === 'Done');       // Auto-complete if status is "Done"
 
-  // If the status is "Done", mark the task as completed from the start
-  const isCompleted = (status === 'Done');
+  // Build the task element
+  const taskItem = createTaskItem(taskText, category, priority, status, date, completed);
 
-  // Create the task element and add it to the list
-  const taskItem = createTaskItem(taskText, category, priority, status, date, isCompleted);
-  taskList.appendChild(taskItem);
+  // Completed tasks go straight to the archive
+  if (completed) {
+    archiveList.appendChild(taskItem);
+  } else {
+    taskList.appendChild(taskItem);
+  }
 
-  // Save to localStorage so the task persists after refresh
+  // Persist and refresh the UI
   saveTasksToStorage();
+  refreshArchiveVisibility();
+  applySortAndFilter();
+  updateCounter();
 
-  // Clear the input box and focus it, ready for the next task
+  // Reset inputs for next task
   taskInput.value = '';
   taskInput.focus();
-
-  // Apply the current filters (hide the task if it doesn't match)
-  applyFilter();
-
-  // Update the counter
-  updateCounter();
 }
 
 
-// ========================================
-// Update Status Label — Helper Function
-// ========================================
-//
-// This is the KEY function for checkbox ↔ status sync.
-// It updates everything in one place:
-//   1. dataset.status (the data attribute)
-//   2. The status dropdown value and color
-//   3. The checkbox (checked/unchecked) and completed class
-//   4. Saves to localStorage
-//
-// Call this whenever the checkbox OR the status dropdown changes.
-//
-function updateStatusLabel(li, newStatus) {
-  // 1. Update the data attribute on the <li>
-  li.dataset.status = newStatus;
+// =============================================
+// 6. CREATE TASK ITEM
+//    Builds and returns a complete <li> task element
+// =============================================
 
-  // 2. Update the inline status dropdown value and color
-  const dropdown = li.querySelector('.task-status-select');
-  if (dropdown) {
-    dropdown.value = newStatus;
-    // Reset the class to apply the correct color
-    dropdown.className = 'task-status-select status-' + newStatus.toLowerCase();
-  }
-
-  // 3. Sync the checkbox and completed class
-  const checkBtn = li.querySelector('.check-btn');
-
-  if (newStatus === 'Done') {
-    // Status is Done → check the checkbox and mark completed
-    li.classList.add('completed');
-    if (checkBtn) checkBtn.textContent = '✓';
-  } else {
-    // Status is NOT Done → uncheck the checkbox and remove completed
-    li.classList.remove('completed');
-    if (checkBtn) checkBtn.textContent = '';
-  }
-
-  // 4. Save to localStorage and update UI
-  saveTasksToStorage();
-  updateCounter();
-  applyFilter();
-}
-
-
-// ========================================
-// Create a Task Element
-// ========================================
-
-// Builds and returns an <li> element for a single task.
-// Parameters:
-//   text      — the task description
-//   category  — e.g. "Work", "Personal"
-//   priority  — e.g. "High", "Medium", "Low"
-//   status    — e.g. "WIP", "Ongoing", "Hold", "Done"
-//   date      — a date string like "2026-04-20", or an empty string if none
-//   completed — boolean, true if the task was already marked done
+/**
+ * Create an <li> element representing a single task.
+ *
+ * @param {string}  text      - The task description
+ * @param {string}  category  - e.g. "Work", "Personal"
+ * @param {string}  priority  - "High", "Medium", or "Low"
+ * @param {string}  status    - "WIP", "Ongoing", "Hold", or "Done"
+ * @param {string}  date      - Due date "YYYY-MM-DD", or ""
+ * @param {boolean} completed - Whether the task is marked done
+ */
 function createTaskItem(text, category, priority, status, date, completed) {
 
-  // Ensure status and completed are in sync for consistency
-  // (Handles edge cases from older saved data)
-  if (completed && status !== 'Done') {
-    status = 'Done';
-  }
-  if (status === 'Done') {
-    completed = true;
-  }
+  // Keep status and completed in sync (handles edge cases in old saved data)
+  if (completed && status !== 'Done') status = 'Done';
+  if (status === 'Done') completed = true;
 
-  // Create the list item (<li>)
+  // ---- Create the <li> ----
   const li = document.createElement('li');
   li.classList.add('task-item');
 
-  // Store task data as data attributes (used for filtering and saving)
-  li.dataset.text = text;
+  // Store data as attributes (used for filtering, sorting, and saving)
+  li.dataset.text     = text;
   li.dataset.category = category;
   li.dataset.priority = priority;
-  li.dataset.status = status;     // Store status
-  li.dataset.date = date;
+  li.dataset.status   = status;
+  li.dataset.date     = date;
 
-  // Add a priority class for colour highlighting
+  // Apply priority colour class (e.g. "priority-high")
   li.classList.add('priority-' + priority.toLowerCase());
 
-  // Restore completed state if this task was already done
-  if (completed) {
-    li.classList.add('completed');
+  // Mark as completed if needed
+  if (completed) li.classList.add('completed');
+
+  // Mark as overdue if the due date is in the past (and not already done)
+  if (date && !completed && isOverdue(date)) {
+    li.classList.add('overdue');
   }
 
-  // --- Checkbox / Complete button ---
+
+  // ---- CHECKBOX BUTTON ----
   const checkBtn = document.createElement('button');
   checkBtn.classList.add('check-btn');
-  checkBtn.title = 'Mark as complete';
+  checkBtn.title = 'Toggle complete';
+  if (completed) checkBtn.textContent = '✓';
 
-  // Show a tick if the task was already completed when restored
-  if (completed) {
-    checkBtn.textContent = '✓';
-  }
-
-  // CHECKBOX → STATUS SYNC
-  // When clicked, toggle completed and sync the status accordingly
+  // Clicking the checkbox toggles the task's completion
   checkBtn.addEventListener('click', function () {
-    if (li.classList.contains('completed')) {
-      // Currently completed → unchecking → revert status to "WIP"
-      updateStatusLabel(li, 'WIP');
-    } else {
-      // Currently not completed → checking → set status to "Done"
-      updateStatusLabel(li, 'Done');
-    }
+    const isDone = li.classList.contains('completed');
+    updateStatusLabel(li, isDone ? 'WIP' : 'Done');
   });
 
-  // --- Task Content (text + badges + date) ---
+
+  // ---- TASK CONTENT DIV ----
   const contentDiv = document.createElement('div');
   contentDiv.classList.add('task-content');
 
-  // Task main text
+
+  // ---- EDITABLE TASK TEXT ----
+  // The user can click it to edit inline, then press Enter or click away to save.
   const span = document.createElement('span');
   span.classList.add('task-text');
   span.textContent = text;
+  span.title = 'Click to edit';
 
-  // Badges row (category + priority + status dropdown)
+  // Start editing when the user clicks the text
+  span.addEventListener('click', function () {
+    startEditing(span, li);
+  });
+
+
+  // ---- BADGES ROW ----
   const metaDiv = document.createElement('div');
   metaDiv.classList.add('task-meta');
 
-  // Category badge
+  // Category badge (e.g. "Work")
   const categoryBadge = document.createElement('span');
   categoryBadge.classList.add('badge', 'badge-' + category.toLowerCase());
   categoryBadge.textContent = category;
 
-  // Priority badge
+  // Priority badge (e.g. "High")
   const priorityBadge = document.createElement('span');
   priorityBadge.classList.add('badge', 'badge-' + priority.toLowerCase());
   priorityBadge.textContent = priority;
 
-  // --- Inline Status Dropdown (replaces static badge) ---
-  // This allows the user to change the status directly on the task
+  // Inline status dropdown (lets the user change status on the task itself)
   const statusDropdown = document.createElement('select');
   statusDropdown.classList.add('task-status-select', 'status-' + status.toLowerCase());
 
-  // Add the four status options
-  const statusOptions = [
-    { value: 'WIP', label: '🔶 WIP' },
-    { value: 'Ongoing', label: '🔵 Ongoing' },
-    { value: 'Hold', label: '⏸ Hold' },
-    { value: 'Done', label: '✅ Done' }
-  ];
-
-  statusOptions.forEach(function (opt) {
+  // Add each status option
+  [
+    { value: 'WIP',     label: '🔶 WIP'     },
+    { value: 'Ongoing', label: '🔵 Ongoing'  },
+    { value: 'Hold',    label: '⏸ Hold'     },
+    { value: 'Done',    label: '✅ Done'     }
+  ].forEach(function (opt) {
     const option = document.createElement('option');
-    option.value = opt.value;
+    option.value       = opt.value;
     option.textContent = opt.label;
-    // Pre-select the current status
-    if (opt.value === status) {
-      option.selected = true;
-    }
+    if (opt.value === status) option.selected = true;
     statusDropdown.appendChild(option);
   });
 
-  // STATUS DROPDOWN → CHECKBOX SYNC (reverse sync)
-  // When the user changes the status dropdown, update checkbox accordingly
+  // When the dropdown changes, sync the rest of the task UI
   statusDropdown.addEventListener('change', function () {
     updateStatusLabel(li, statusDropdown.value);
   });
 
-  // Assemble the badges row
-  metaDiv.appendChild(categoryBadge);
-  metaDiv.appendChild(priorityBadge);
-  metaDiv.appendChild(statusDropdown);   // Interactive dropdown instead of static badge
-
-  // Date display (only shown if a date was chosen)
+  // ---- DUE DATE DISPLAY ----
   if (date) {
     const dateSpan = document.createElement('span');
     dateSpan.classList.add('task-date');
 
-    // Format the date in a friendly way, e.g. "📅 20 Apr 2026"
-    const formatted = formatDate(date);
-    dateSpan.textContent = '📅 ' + formatted;
-    metaDiv.appendChild(dateSpan);
+    const overdue = !completed && isOverdue(date);
+    if (overdue) dateSpan.classList.add('overdue-date');
+
+    // Friendly format: "📅 20 Apr 2026"
+    dateSpan.textContent = '📅 ' + formatDate(date);
+
+    // Add a small "Overdue" pill if past due
+    if (overdue) {
+      const overdueTag = document.createElement('span');
+      overdueTag.classList.add('overdue-badge');
+      overdueTag.textContent = 'Overdue';
+      metaDiv.appendChild(dateSpan);
+      metaDiv.appendChild(overdueTag);
+    } else {
+      metaDiv.appendChild(dateSpan);
+    }
   }
 
-  contentDiv.appendChild(span);
-  contentDiv.appendChild(metaDiv);
+  // Assemble the badges row
+  metaDiv.prepend(statusDropdown);  // Status dropdown first
+  metaDiv.prepend(priorityBadge);   // Then priority
+  metaDiv.prepend(categoryBadge);   // Then category (leftmost)
 
-  // --- Delete Button ---
+
+  // ---- DELETE BUTTON ----
   const deleteBtn = document.createElement('button');
   deleteBtn.classList.add('delete-btn');
   deleteBtn.textContent = '🗑';
   deleteBtn.title = 'Delete task';
 
-  // When clicked, remove this task and update storage
   deleteBtn.addEventListener('click', function () {
     li.remove();
-    saveTasksToStorage();   // Remove from localStorage too
+    saveTasksToStorage();
+    refreshArchiveVisibility();
     updateCounter();
   });
 
-  // Put the pieces together inside the list item
+
+  // ---- ASSEMBLE EVERYTHING ----
+  contentDiv.appendChild(span);
+  contentDiv.appendChild(metaDiv);
+
   li.appendChild(checkBtn);
   li.appendChild(contentDiv);
   li.appendChild(deleteBtn);
@@ -337,127 +356,402 @@ function createTaskItem(text, category, priority, status, date, completed) {
 }
 
 
-// ========================================
-// Status Label Helper
-// ========================================
+// =============================================
+// 7. INLINE EDITING
+//    Let the user click task text to edit it in place
+// =============================================
 
-// Returns a friendly display label for each status value
-// (Used if you ever need the emoji + text label for a status)
-function getStatusLabel(status) {
-  switch (status) {
-    case 'WIP': return '🔶 WIP';
-    case 'Ongoing': return '🔵 Ongoing';
-    case 'Hold': return '⏸ Hold';
-    case 'Done': return '✅ Done';
-    default: return status;
-  }
-}
+/**
+ * Turn the task text span into an editable contenteditable field.
+ * Pressing Enter or clicking outside saves the edit.
+ *
+ * @param {HTMLElement} span - The .task-text element to edit
+ * @param {HTMLElement} li   - The parent .task-item <li>
+ */
+function startEditing(span, li) {
+  // Don't open two edit sessions at once
+  if (span.classList.contains('editing')) return;
 
+  // Add the "editing" CSS class for visual feedback
+  span.classList.add('editing');
 
-// ========================================
-// Date Formatter
-// ========================================
+  // Make the span focusable and editable
+  span.setAttribute('contenteditable', 'true');
+  span.focus();
 
-// Converts "2026-04-20" → "20 Apr 2026"
-function formatDate(dateStr) {
-  if (!dateStr) return '';
+  // Move the cursor to the end of the text
+  const range = document.createRange();
+  const sel   = window.getSelection();
+  range.selectNodeContents(span);
+  range.collapse(false);  // false = end
+  sel.removeAllRanges();
+  sel.addRange(range);
 
-  // Split the date string into parts
-  const parts = dateStr.split('-');   // ["2026", "04", "20"]
-  const year = parts[0];
-  const month = parseInt(parts[1], 10) - 1;  // JS months are 0-indexed
-  const day = parseInt(parts[2], 10);
+  // ---- Save on Enter key ----
+  span.addEventListener('keydown', function handleKey(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();   // Don't insert a newline character
+      span.blur();           // Trigger the blur/save handler
+    }
+  }, { once: true });
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // ---- Save on click away (blur) ----
+  span.addEventListener('blur', function saveEdit() {
+    const newText = span.textContent.trim();
 
-  return day + ' ' + months[month] + ' ' + year;
-}
-
-
-// ========================================
-// Filter Tasks (by Category AND Status)
-// ========================================
-
-// Add click listeners to ALL filter buttons (both filter bars)
-filterBtns.forEach(function (btn) {
-  btn.addEventListener('click', function () {
-    const filterType = btn.dataset.filterType;   // "category" or "status"
-    const filterValue = btn.dataset.filter;       // e.g. "All", "Work", "WIP"
-
-    if (filterType === 'category') {
-      // Update category filter and highlight the correct button
-      document.querySelectorAll('#category-filter-bar .filter-btn').forEach(function (b) {
-        b.classList.remove('active');
-      });
-      btn.classList.add('active');
-      currentCategoryFilter = filterValue;
-
-    } else if (filterType === 'status') {
-      // Update status filter and highlight the correct button
-      document.querySelectorAll('#status-filter-bar .filter-btn').forEach(function (b) {
-        b.classList.remove('active');
-      });
-      btn.classList.add('active');
-      currentStatusFilter = filterValue;
+    // If text was cleared, revert to the original value
+    if (newText === '') {
+      span.textContent = li.dataset.text;
+    } else {
+      // Update both the display and the stored data attribute
+      span.textContent  = newText;
+      li.dataset.text   = newText;
     }
 
-    // Re-apply the combined filter
-    applyFilter();
-  });
+    // Exit editing mode
+    span.removeAttribute('contenteditable');
+    span.classList.remove('editing');
+
+    // Persist the change
+    saveTasksToStorage();
+  }, { once: true });
+}
+
+
+// =============================================
+// 8. UPDATE STATUS (Checkbox ↔ Status Dropdown Sync)
+//    The single source of truth for changing a task's status
+// =============================================
+
+/**
+ * Update a task's status everywhere: data attribute, dropdown colour,
+ * checkbox tick, completed class, overdue class, archive placement.
+ *
+ * @param {HTMLElement} li        - The .task-item <li>
+ * @param {string}      newStatus - "WIP", "Ongoing", "Hold", or "Done"
+ */
+function updateStatusLabel(li, newStatus) {
+  // 1. Update the data attribute
+  li.dataset.status = newStatus;
+
+  // 2. Update the inline dropdown colour class
+  const dropdown = li.querySelector('.task-status-select');
+  if (dropdown) {
+    dropdown.value     = newStatus;
+    dropdown.className = 'task-status-select status-' + newStatus.toLowerCase();
+  }
+
+  // 3. Sync the checkbox and completed/overdue classes
+  const checkBtn = li.querySelector('.check-btn');
+  const date     = li.dataset.date;
+
+  if (newStatus === 'Done') {
+    // Mark as done
+    li.classList.add('completed');
+    li.classList.remove('overdue');   // Done tasks are no longer "overdue"
+    if (checkBtn) checkBtn.textContent = '✓';
+
+    // Move from active list → archive list
+    archiveList.appendChild(li);
+
+  } else {
+    // Unmark as done
+    li.classList.remove('completed');
+    if (checkBtn) checkBtn.textContent = '';
+
+    // Re-apply overdue highlighting if applicable
+    if (date && isOverdue(date)) {
+      li.classList.add('overdue');
+    } else {
+      li.classList.remove('overdue');
+    }
+
+    // Move back from archive list → active list
+    taskList.appendChild(li);
+  }
+
+  // 4. Persist and refresh
+  saveTasksToStorage();
+  refreshArchiveVisibility();
+  applySortAndFilter();
+  updateCounter();
+}
+
+
+// =============================================
+// 9. SEARCH — Live keyword filtering
+// =============================================
+
+// Re-filter whenever the user types in the search box
+searchInput.addEventListener('input', function () {
+  applySortAndFilter();
+  updateCounter();
 });
 
-// Show or hide tasks based on BOTH active filters (category AND status)
-function applyFilter() {
-  const allTasks = taskList.querySelectorAll('.task-item');
 
-  allTasks.forEach(function (task) {
-    // Check if the task matches the category filter
-    const matchesCategory =
-      currentCategoryFilter === 'All' ||
-      task.dataset.category === currentCategoryFilter;
+// =============================================
+// 10. SORT TASKS BY DUE DATE
+// =============================================
 
-    // Check if the task matches the status filter
-    const matchesStatus =
-      currentStatusFilter === 'All' ||
-      task.dataset.status === currentStatusFilter;
+// Re-sort whenever the user changes the sort dropdown
+sortSelect.addEventListener('change', function () {
+  currentSort = sortSelect.value;
+  applySortAndFilter();
+});
 
-    // Show the task only if it passes BOTH filters
-    if (matchesCategory && matchesStatus) {
-      task.style.display = '';      // Show the task
+/**
+ * Sort the active task list by due date.
+ * Tasks without a due date are sorted to the end.
+ *
+ * @param {string} direction - "date-asc" or "date-desc"
+ */
+function sortTasks(direction) {
+  const items = Array.from(taskList.querySelectorAll('.task-item'));
+
+  items.sort(function (a, b) {
+    const dateA = a.dataset.date;
+    const dateB = b.dataset.date;
+
+    // No date → push to bottom
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+
+    const diff = new Date(dateA) - new Date(dateB);
+    return direction === 'date-asc' ? diff : -diff;
+  });
+
+  // Re-append tasks in sorted order
+  items.forEach(function (item) {
+    taskList.appendChild(item);
+  });
+}
+
+
+// =============================================
+// 11. APPLY SORT + FILTER + SEARCH
+//    The master function that runs whenever anything changes.
+//    It handles: sorting, search text, category filter, status filter,
+//    and the current nav view (all / active / archive).
+// =============================================
+
+function applySortAndFilter() {
+  const query = searchInput.value.trim().toLowerCase();
+
+  // Sort first (only affects the active list)
+  if (currentSort !== 'default') {
+    sortTasks(currentSort);
+  }
+
+  // Now filter every task item in the active list
+  const activeTasks = taskList.querySelectorAll('.task-item');
+  let visibleActiveCount = 0;
+
+  activeTasks.forEach(function (task) {
+    const matchesCategory = (currentCategoryFilter === 'All') || (task.dataset.category === currentCategoryFilter);
+    const matchesStatus   = (currentStatusFilter   === 'All') || (task.dataset.status   === currentStatusFilter);
+    const matchesSearch   = (query === '') || task.dataset.text.toLowerCase().includes(query);
+
+    // Show/hide based on all three conditions
+    if (matchesCategory && matchesStatus && matchesSearch) {
+      task.style.display = '';
+      visibleActiveCount++;
     } else {
-      task.style.display = 'none';  // Hide the task
+      task.style.display = 'none';
     }
   });
+
+  // Show the empty state message if no active tasks are visible
+  if (emptyState) {
+    emptyState.style.display = visibleActiveCount === 0 ? 'flex' : 'none';
+  }
 
   updateCounter();
 }
 
 
-// ========================================
-// Update the Task Counter
-// ========================================
+// =============================================
+// 12. STATUS FILTER CHIPS
+// =============================================
+
+statusChips.forEach(function (chip) {
+  chip.addEventListener('click', function () {
+    // Highlight only the clicked chip
+    statusChips.forEach(function (c) { c.classList.remove('active'); });
+    chip.classList.add('active');
+
+    currentStatusFilter = chip.dataset.filter;  // e.g. "WIP", "All"
+    applySortAndFilter();
+  });
+});
+
+
+// =============================================
+// 13. CATEGORY FILTER — Sidebar nav items
+// =============================================
+
+categoryNavItems.forEach(function (item) {
+  item.addEventListener('click', function () {
+    // Remove "active" from all category nav items
+    categoryNavItems.forEach(function (n) { n.classList.remove('active'); });
+    item.classList.add('active');
+
+    currentCategoryFilter = item.dataset.filter;  // e.g. "Work"
+    applySortAndFilter();
+  });
+});
+
+
+// =============================================
+// 14. MAIN NAV (All / Active / Archive)
+//    Controls which sections are visible
+// =============================================
+
+/** Switch the active main nav button */
+function setActiveNav(btn) {
+  [navAll, navActive, navArchive].forEach(function (n) {
+    if (n) n.classList.remove('active');
+  });
+  if (btn) btn.classList.add('active');
+}
+
+// "All Tasks" — show both active list and archive
+if (navAll) {
+  navAll.addEventListener('click', function () {
+    currentNavView = 'all';
+    setActiveNav(navAll);
+    document.getElementById('active-section').style.display = '';
+    refreshArchiveVisibility();
+  });
+}
+
+// "Active" — show only the active list
+if (navActive) {
+  navActive.addEventListener('click', function () {
+    currentNavView = 'active';
+    setActiveNav(navActive);
+    document.getElementById('active-section').style.display = '';
+    archiveSection.style.display = 'none';
+  });
+}
+
+// "Archive" — show only the archive list
+if (navArchive) {
+  navArchive.addEventListener('click', function () {
+    currentNavView = 'archive';
+    setActiveNav(navArchive);
+    document.getElementById('active-section').style.display = 'none';
+    archiveSection.style.display = '';
+  });
+}
+
+
+// =============================================
+// 15. ARCHIVE COLLAPSE / EXPAND
+// =============================================
+
+archiveToggle.addEventListener('click', function () {
+  isArchiveCollapsed = !isArchiveCollapsed;
+
+  // Toggle the chevron rotation
+  archiveChevron.classList.toggle('collapsed', isArchiveCollapsed);
+
+  // Show or hide the archive list
+  archiveList.style.display = isArchiveCollapsed ? 'none' : '';
+});
+
+/**
+ * Show or hide the entire archive section based on
+ * whether there are any completed tasks and the current nav view.
+ */
+function refreshArchiveVisibility() {
+  const hasArchiveTasks = archiveList.querySelectorAll('.task-item').length > 0;
+
+  // Only show archive if we're in "all" or "archive" view and there are tasks
+  if (hasArchiveTasks && currentNavView !== 'active') {
+    archiveSection.style.display = '';
+  } else {
+    archiveSection.style.display = 'none';
+  }
+}
+
+
+// =============================================
+// 16. TASK COUNTER
+//    Shows how many active / completed tasks are visible
+// =============================================
 
 function updateCounter() {
-  // Count only visible (not filtered-out) tasks
-  const allTasks = taskList.querySelectorAll('.task-item');
-  const visibleTasks = Array.from(allTasks).filter(function (t) {
-    return t.style.display !== 'none';
-  });
-  const completedVisible = visibleTasks.filter(function (t) {
-    return t.classList.contains('completed');
-  });
-  const remaining = visibleTasks.length - completedVisible.length;
+  const allActive    = taskList.querySelectorAll('.task-item');
+  const allArchive   = archiveList.querySelectorAll('.task-item');
+  const visibleAct   = Array.from(allActive).filter(t => t.style.display !== 'none');
+  const totalTasks   = allActive.length + allArchive.length;
 
-  if (allTasks.length === 0) {
-    // No tasks exist at all
+  if (totalTasks === 0) {
     taskCounter.textContent = 'No tasks yet. Add one above!';
-  } else if (visibleTasks.length === 0) {
-    // Tasks exist but none match the current filter
+  } else if (visibleAct.length === 0) {
     taskCounter.textContent = 'No tasks match the current filter.';
   } else {
     taskCounter.textContent =
-      remaining + ' task' + (remaining !== 1 ? 's' : '') +
-      ' remaining · ' + completedVisible.length + ' completed';
+      visibleAct.length + ' active task' + (visibleAct.length !== 1 ? 's' : '') +
+      ' · ' + allArchive.length + ' completed';
+  }
+}
+
+
+// =============================================
+// 17. HELPER — Overdue Check
+//    Returns true if a date string is before today
+// =============================================
+
+/**
+ * Returns true if the provided date string ("YYYY-MM-DD") is in the past.
+ * Today's date is NOT considered overdue.
+ */
+function isOverdue(dateStr) {
+  if (!dateStr) return false;
+
+  // Compare date strings directly (YYYY-MM-DD sorts lexicographically)
+  const today = new Date();
+  const todayStr = today.getFullYear() + '-' +
+    String(today.getMonth() + 1).padStart(2, '0') + '-' +
+    String(today.getDate()).padStart(2, '0');
+
+  return dateStr < todayStr;
+}
+
+
+// =============================================
+// 18. HELPER — Date Formatter
+//    Converts "2026-04-20" → "20 Apr 2026"
+// =============================================
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+
+  const parts = dateStr.split('-');                    // ["2026", "04", "20"]
+  const year  = parts[0];
+  const month = parseInt(parts[1], 10) - 1;           // JS months are 0-indexed
+  const day   = parseInt(parts[2], 10);
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun',
+                  'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  return day + ' ' + months[month] + ' ' + year;      // "20 Apr 2026"
+}
+
+
+// =============================================
+// 19. HELPER — Status Labels
+//    Returns the emoji + text label for a status
+// =============================================
+
+function getStatusLabel(status) {
+  switch (status) {
+    case 'WIP':     return '🔶 WIP';
+    case 'Ongoing': return '🔵 Ongoing';
+    case 'Hold':    return '⏸ Hold';
+    case 'Done':    return '✅ Done';
+    default:        return status;
   }
 }
