@@ -4,99 +4,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Task List</title>
+  <title>TaskFlow — My Productivity Board</title>
   <meta name="description"
-    content="A simple, beginner-friendly task list app with categories, priorities, dates, and synced task status." />
-  <!-- Link to our CSS file for styling -->
+    content="A Notion-inspired productivity app with categories, priorities, status tracking, search, and more." />
+
+  <!-- Google Font: Inter for clean, modern typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Our main stylesheet -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
 
-  <div class="container">
+  <!-- ==============================
+       Page Wrapper (centres content)
+       ============================== -->
+  <div class="page-wrapper">
 
-    <!-- App Header -->
-    <h1 class="app-title">📝 My Task List</h1>
-
-    <!-- Input area: type a task, click Add -->
-    <div class="input-area">
-      <input type="text" id="task-input" placeholder="Add a new task..." />
-      <button id="add-btn">Add</button>
-    </div>
-
-    <!-- Row 2: Category, Priority, Status, and Date inputs -->
-    <div class="options-row">
-
-      <!-- Category dropdown -->
-      <div class="option-group">
-        <label for="category-select">Category</label>
-        <select id="category-select">
-          <option value="Work">💼 Work</option>
-          <option value="Learning">📚 Learning</option>
-          <option value="Personal">🏠 Personal</option>
-          <option value="Hobby">🎨 Hobby</option>
-        </select>
+    <!-- ==============================
+         Sidebar
+         ============================== -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-icon">⚡</span>
+        <span class="sidebar-logo-text">TaskFlow</span>
       </div>
 
-      <!-- Priority dropdown -->
-      <div class="option-group">
-        <label for="priority-select">Priority</label>
-        <select id="priority-select">
-          <option value="High">🔴 High</option>
-          <option value="Medium" selected>🟡 Medium</option>
-          <option value="Low">🟢 Low</option>
-        </select>
+      <!-- Quick navigation labels (decorative — filter logic is in main) -->
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Workspace</div>
+        <button class="nav-item active" id="nav-all" data-nav="all">
+          <span class="nav-icon">🏠</span> All Tasks
+        </button>
+        <button class="nav-item" id="nav-active" data-nav="active">
+          <span class="nav-icon">🔥</span> Active
+        </button>
+        <button class="nav-item" id="nav-archive" data-nav="archive">
+          <span class="nav-icon">📦</span> Archive
+        </button>
+
+        <div class="nav-section-label" style="margin-top: 24px;">Categories</div>
+        <button class="nav-item" data-filter-type="category" data-filter="Work">
+          <span class="nav-icon">💼</span> Work
+        </button>
+        <button class="nav-item" data-filter-type="category" data-filter="Learning">
+          <span class="nav-icon">📚</span> Learning
+        </button>
+        <button class="nav-item" data-filter-type="category" data-filter="Personal">
+          <span class="nav-icon">🏠</span> Personal
+        </button>
+        <button class="nav-item" data-filter-type="category" data-filter="Hobby">
+          <span class="nav-icon">🎨</span> Hobby
+        </button>
+      </nav>
+    </aside>
+
+    <!-- ==============================
+         Main Content Area
+         ============================== -->
+    <main class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">📝 My Tasks</h1>
+          <p class="page-subtitle">Stay focused, get things done.</p>
+        </div>
       </div>
 
-      <!-- Status dropdown -->
-      <div class="option-group">
-        <label for="status-select">Status</label>
-        <select id="status-select">
-          <option value="WIP">🔶 WIP</option>
-          <option value="Ongoing">🔵 Ongoing</option>
-          <option value="Hold">⏸ Hold</option>
-          <option value="Done">✅ Done</option>
-        </select>
+      <!-- ==============================
+           Add Task Card
+           ============================== -->
+      <div class="card add-task-card">
+        <div class="card-header">
+          <span class="card-title">Add New Task</span>
+        </div>
+
+        <!-- Task text input + Add button -->
+        <div class="input-area">
+          <input type="text" id="task-input" placeholder="What do you need to do?" autocomplete="off" />
+          <button id="add-btn">+ Add Task</button>
+        </div>
+
+        <!-- Options row: category, priority, status, date -->
+        <div class="options-row">
+
+          <!-- Category dropdown -->
+          <div class="option-group">
+            <label for="category-select">Category</label>
+            <select id="category-select">
+              <option value="Work">💼 Work</option>
+              <option value="Learning">📚 Learning</option>
+              <option value="Personal">🏠 Personal</option>
+              <option value="Hobby">🎨 Hobby</option>
+            </select>
+          </div>
+
+          <!-- Priority dropdown -->
+          <div class="option-group">
+            <label for="priority-select">Priority</label>
+            <select id="priority-select">
+              <option value="High">🔴 High</option>
+              <option value="Medium" selected>🟡 Medium</option>
+              <option value="Low">🟢 Low</option>
+            </select>
+          </div>
+
+          <!-- Status dropdown -->
+          <div class="option-group">
+            <label for="status-select">Status</label>
+            <select id="status-select">
+              <option value="WIP">🔶 WIP</option>
+              <option value="Ongoing">🔵 Ongoing</option>
+              <option value="Hold">⏸ Hold</option>
+              <option value="Done">✅ Done</option>
+            </select>
+          </div>
+
+          <!-- Due date picker -->
+          <div class="option-group">
+            <label for="date-input">Due Date</label>
+            <input type="date" id="date-input" />
+          </div>
+
+        </div>
       </div>
 
-      <!-- Date picker -->
-      <div class="option-group">
-        <label for="date-input">Due Date</label>
-        <input type="date" id="date-input" />
+      <!-- ==============================
+           Toolbar: Search + Sort + Filters
+           ============================== -->
+      <div class="card toolbar-card">
+
+        <!-- Search box -->
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search tasks..." autocomplete="off" />
+        </div>
+
+        <!-- Sort control -->
+        <div class="sort-wrapper">
+          <label for="sort-select" class="sort-label">Sort:</label>
+          <select id="sort-select">
+            <option value="default">Default</option>
+            <option value="date-asc">Due Date ↑</option>
+            <option value="date-desc">Due Date ↓</option>
+          </select>
+        </div>
+
       </div>
 
-    </div>
+      <!-- Filter chips row (status) -->
+      <div class="filter-chips-row">
+        <span class="filter-chips-label">Status:</span>
+        <div class="filter-chips" id="status-filter-bar">
+          <button class="chip active" data-filter-type="status" data-filter="All">All</button>
+          <button class="chip chip-wip" data-filter-type="status" data-filter="WIP">🔶 WIP</button>
+          <button class="chip chip-ongoing" data-filter-type="status" data-filter="Ongoing">🔵 Ongoing</button>
+          <button class="chip chip-hold" data-filter-type="status" data-filter="Hold">⏸ Hold</button>
+          <button class="chip chip-done" data-filter-type="status" data-filter="Done">✅ Done</button>
+        </div>
+      </div>
 
-    <!-- Filter Row 1: Filter by Category -->
-    <div class="filter-section-label">Filter by Category:</div>
-    <div class="filter-bar" id="category-filter-bar">
-      <button class="filter-btn active" data-filter-type="category" data-filter="All">All</button>
-      <button class="filter-btn" data-filter-type="category" data-filter="Work">💼 Work</button>
-      <button class="filter-btn" data-filter-type="category" data-filter="Learning">📚 Learning</button>
-      <button class="filter-btn" data-filter-type="category" data-filter="Personal">🏠 Personal</button>
-      <button class="filter-btn" data-filter-type="category" data-filter="Hobby">🎨 Hobby</button>
-    </div>
+      <!-- Task counter -->
+      <p class="task-counter" id="task-counter">No tasks yet. Add one above!</p>
 
-    <!-- Filter Row 2: Filter by Status -->
-    <div class="filter-section-label">Filter by Status:</div>
-    <div class="filter-bar" id="status-filter-bar">
-      <button class="filter-btn active" data-filter-type="status" data-filter="All">All</button>
-      <button class="filter-btn status-filter-wip" data-filter-type="status" data-filter="WIP">🔶 WIP</button>
-      <button class="filter-btn status-filter-ongoing" data-filter-type="status" data-filter="Ongoing">🔵
-        Ongoing</button>
-      <button class="filter-btn status-filter-hold" data-filter-type="status" data-filter="Hold">⏸ Hold</button>
-      <button class="filter-btn status-filter-done" data-filter-type="status" data-filter="Done">✅ Done</button>
-    </div>
+      <!-- ==============================
+           Active Tasks List
+           ============================== -->
+      <section class="task-section" id="active-section">
+        <ul id="task-list" class="task-list"></ul>
+        <div class="empty-state" id="empty-state" style="display:none;">
+          <div class="empty-icon">✅</div>
+          <p>No tasks here. Add one above!</p>
+        </div>
+      </section>
 
-    <!-- Counter showing how many tasks are left -->
-    <p class="task-counter" id="task-counter">No tasks yet. Add one above!</p>
+      <!-- ==============================
+           Archive Section (completed tasks)
+           ============================== -->
+      <section class="task-section archive-section" id="archive-section" style="display:none;">
+        <div class="archive-header" id="archive-toggle">
+          <span class="archive-title">📦 Archived (Completed)</span>
+          <span class="archive-chevron" id="archive-chevron">▾</span>
+        </div>
+        <ul id="archive-list" class="task-list archive-list"></ul>
+      </section>
 
-    <!-- The list where tasks will appear -->
-    <ul id="task-list"></ul>
-
+    </main>
   </div>
 
-  <!-- Link to our JavaScript file for logic -->
+  <!-- Our JavaScript logic -->
   <script src="script.js"></script>
 </body>
 
